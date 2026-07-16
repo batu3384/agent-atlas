@@ -4,6 +4,7 @@
 
 ## Quick Start
 
+- Install: `pip install agent-atlas` then `agent-atlas install`
 - [Installation Guide](https://github.com/batu3384/agent-atlas/blob/main/docs/install.md): Step-by-step setup for AI agents and humans
 - [README](https://github.com/batu3384/agent-atlas/blob/main/README.md): Product overview
 - [Tier 1 login channels](https://github.com/batu3384/agent-atlas/blob/main/docs/tier1.md): Twitter, Reddit, LinkedIn, OpenCLI bridge
