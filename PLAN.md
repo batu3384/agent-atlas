@@ -9,7 +9,7 @@
 | **Konum** | `~/Documents/agent-atlas/` |
 | **Lisans** | MIT |
 | **Dil** | İngilizce (ürün + docs) |
-| **Durum** | v0.1.0 GitHub; PyPI publish hazır (Trusted Publishing) |
+| **Durum** | v0.1.0 — GitHub repo canlı |
 | **CLI** | Python (`agent-atlas`) |
 | **Web arama** | Exa + mcporter |
 

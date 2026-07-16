@@ -2,18 +2,55 @@
 
 > Search and research the open web for your AI agent.
 
-Agent Atlas is a **capability layer**: it installs, health-checks, and routes free upstream tools so your AI agent can research the web. It is **not** a scraper wrapper — after install, the agent calls upstream CLIs/APIs directly.
+Agent Atlas is a **capability layer**: it installs, health-checks, and routes free upstream tools so your AI coding agent can research the web. It is **not** a scraper framework — after setup, the agent calls upstream CLIs/APIs directly.
 
-**10 Western channels.** No China-only platforms.
+**10 Western channels.** No China-only platforms. English-first docs.
 
 > Not the same as other GitHub projects named “AgentAtlas” (e.g. browser schema registries). This repo is an **open-web research installer + router** for AI coding agents.
 
-| Tier | Channels |
-|------|----------|
-| **0 — zero config** | Web (Jina), Search (Exa+mcporter), YouTube (yt-dlp), GitHub (gh), RSS (feedparser) |
-| **1 — login** | Twitter/X, Reddit, Facebook, Instagram, LinkedIn |
+---
 
-## Quick start (for humans)
+## What it does
+
+| Capability | Description |
+|------------|-------------|
+| **Install** | Sets up Tier 0 tools (+ optional Tier 1 CLIs) and registers `SKILL.md` for Cursor / Claude Code / agents |
+| **Doctor** | Per-channel health: `ok` / `warn` / `off` + `active_backend` (JSON for agents) |
+| **Smoke** | One real research call per ready channel — proves end-to-end wiring |
+| **Config** | `~/.agent-atlas/config.yaml` → runtime env (`TWITTER_*`, `LI_*`, `OPENCLI_PROFILE`, …) |
+| **Routing** | Prefer Tier 0; Tier 1 uses cookie CLIs first, OpenCLI bridge when needed |
+
+---
+
+## Channels & tools
+
+### Tier 0 — zero config (after install)
+
+| Channel | Tool | What you get |
+|---------|------|----------------|
+| **web** | [Jina Reader](https://github.com/jina-ai/reader) | URL → clean markdown |
+| **exa** | [Exa](https://exa.ai) via [mcporter](https://github.com/nicobailon/mcporter) | Web search for agents |
+| **youtube** | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Transcripts / metadata (no download required) |
+| **github** | [GitHub CLI](https://cli.github.com) (`gh`) | Repos, issues, search |
+| **rss** | [feedparser](https://github.com/kurtmckee/feedparser) | RSS / Atom feeds |
+
+### Tier 1 — login / session
+
+| Channel | Backend order | Chrome closed? | Notes |
+|---------|---------------|----------------|-------|
+| **twitter** | [twitter-cli](https://github.com/public-clis/twitter-cli) → [OpenCLI](https://github.com/jackwener/opencli) | Yes (twitter-cli) | Tokens / cookies |
+| **reddit** | [rdt-cli](https://pypi.org/project/rdt-cli/) → OpenCLI | Yes (rdt-cli) | Cookies from Atlas Chrome profile on doctor |
+| **linkedin** | OpenCLI → `li-cli` (experimental) → Jina | **No** for reliable use | LinkedIn blocks headless cookie replay; keep Chrome + bridge + feed open |
+| **facebook** | OpenCLI | No | Often disabled via `disabled_channels` |
+| **instagram** | OpenCLI | No | Often disabled via `disabled_channels` |
+
+Bundled experimental package: [`li-cli/`](li-cli/) — LinkedIn cookie sync + headless Chromium. Prefer OpenCLI for production research.
+
+Full command examples: [docs/platforms.md](docs/platforms.md) · Tier 1 setup: [docs/tier1.md](docs/tier1.md)
+
+---
+
+## Quick start
 
 Tell your AI agent:
 
@@ -21,43 +58,90 @@ Tell your AI agent:
 Install Agent Atlas using docs/install.md in this repo.
 ```
 
-Or from PyPI:
+Or manually:
 
 ```bash
-pip install agent-atlas
-agent-atlas install
-agent-atlas doctor
-```
-
-Or from this repo:
-
-```bash
-cd ~/Documents/agent-atlas   # or clone path
+git clone https://github.com/batu3384/agent-atlas.git
+cd agent-atlas
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
+# or: uv tool install -e .   # puts agent-atlas on ~/.local/bin
+
 agent-atlas install
 agent-atlas doctor
+agent-atlas smoke
 ```
 
-## Commands
+Tier 1 (optional):
+
+```bash
+agent-atlas install --channels twitter,reddit,linkedin,opencli
+agent-atlas configure twitter_chrome_profile "Profile 3"
+agent-atlas configure opencli_profile atlas
+```
+
+Ensure `~/.local/bin` is on your `PATH` if you use `uv tool install` for `agent-atlas`, `rdt`, or `li`.
+
+---
+
+## CLI
 
 ```bash
 agent-atlas doctor          # human report
-agent-atlas doctor --json   # for agents
+agent-atlas doctor --json   # for agents — use active_backend per channel
 agent-atlas smoke           # one real call per ready channel
 agent-atlas smoke --json
-agent-atlas install         # Tier 0 tools + SKILL.md
+agent-atlas install         # Tier 0 + SKILL.md
+agent-atlas install --channels twitter,reddit,linkedin,opencli,all
 agent-atlas install --safe  # print needs only
+agent-atlas configure KEY VALUE
 agent-atlas skill --install
 agent-atlas uninstall
 ```
 
+---
+
+## Example research (after doctor is green)
+
+```bash
+# Tier 0
+curl -s "https://r.jina.ai/https://example.com"
+mcporter call 'exa.web_search_exa(query: "AI agents 2026", numResults: 5)'
+gh search repos "AI agent" --sort stars --limit 5
+yt-dlp --flat-playlist --print "%(title)s" "ytsearch3:AI agents"
+python3 -c "import feedparser; print([e.title for e in feedparser.parse('https://hnrss.org/frontpage').entries[:5]])"
+
+# Tier 1
+twitter search "AI agents" -n 10
+rdt search "AI agents" -n 10 --compact --yaml
+opencli linkedin people-search "AI agents" -f yaml
+```
+
+---
+
 ## Design
 
-- Config: `~/.agent-atlas/` (mode 600)
-- Temp: `/tmp/`
-- Skill: agentskills.io `SKILL.md` → `~/.agents/skills/agent-atlas/`
+- **Config:** `~/.agent-atlas/config.yaml` (mode 600)
+- **Temp:** `/tmp/` — do not pollute the project tree
+- **Skill:** agentskills.io `SKILL.md` → `~/.agents/skills/agent-atlas/`
+- **Doctor statuses:** `ok` = ready · `warn` = installed, login needed · `off` = missing/disabled
 - Inspiration: Agent Reach’s installer/doctor model — different product, English-first, Western-only scope
+
+---
+
+## Docs
+
+| Doc | Contents |
+|-----|----------|
+| [docs/install.md](docs/install.md) | Install for agents & humans |
+| [docs/tier1.md](docs/tier1.md) | Twitter / Reddit / LinkedIn / OpenCLI |
+| [docs/platforms.md](docs/platforms.md) | Backend order + examples |
+| [docs/update.md](docs/update.md) | Update path |
+| [SKILL.md](SKILL.md) | Agent skill (routing rules) |
+| [PLAN.md](PLAN.md) | Project plan / status |
+| [li-cli/README.md](li-cli/README.md) | Experimental LinkedIn CLI |
+
+---
 
 ## License
 
@@ -65,4 +149,4 @@ MIT — see [LICENSE](LICENSE). Upstream tools keep their own licenses.
 
 ## Credits (upstream)
 
-[Jina Reader](https://github.com/jina-ai/reader) · [Exa](https://exa.ai) · [mcporter](https://github.com/nicobailon/mcporter) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [GitHub CLI](https://cli.github.com) · [feedparser](https://github.com/kurtmckee/feedparser) · [OpenCLI](https://github.com/jackwener/opencli) · [twitter-cli](https://github.com/public-clis/twitter-cli)
+[Jina Reader](https://github.com/jina-ai/reader) · [Exa](https://exa.ai) · [mcporter](https://github.com/nicobailon/mcporter) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [GitHub CLI](https://cli.github.com) · [feedparser](https://github.com/kurtmckee/feedparser) · [OpenCLI](https://github.com/jackwener/opencli) · [twitter-cli](https://github.com/public-clis/twitter-cli) · [rdt-cli](https://pypi.org/project/rdt-cli/) · li-cli (this repo)

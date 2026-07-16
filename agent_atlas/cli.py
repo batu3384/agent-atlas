@@ -130,8 +130,10 @@ def cmd_install(*, safe: bool = False, dry_run: bool = False, channels: str = ""
         wanted & {"opencli", "reddit", "facebook", "instagram", "linkedin", "twitter"}
     )
     want_twitter = want_all or "twitter" in wanted
+    want_reddit = want_all or "reddit" in wanted
+    want_linkedin = want_all or "linkedin" in wanted
 
-    if want_opencli or want_twitter:
+    if want_opencli or want_twitter or want_reddit or want_linkedin:
         note("Tier 1 — see docs/tier1.md (use secondary accounts)")
 
     if want_opencli:
@@ -170,6 +172,45 @@ def cmd_install(*, safe: bool = False, dry_run: bool = False, channels: str = ""
                 note(f"WARN: twitter-cli: {(r.stderr or r.stdout or '').strip()}")
         else:
             note("NEED: uv tool install twitter-cli")
+
+    if want_reddit:
+        if dry_run or safe:
+            note("NEED: uv tool install rdt-cli — login in Atlas Chrome, then agent-atlas doctor")
+        elif _which("rdt"):
+            note("OK: rdt-cli")
+        elif _which("uv"):
+            note("Installing rdt-cli via uv tool…")
+            r = _run(["uv", "tool", "install", "rdt-cli"])
+            if r.returncode == 0:
+                note("OK: rdt-cli — Reddit login in Atlas Chrome profile (docs/tier1.md)")
+            else:
+                note(f"WARN: rdt-cli: {(r.stderr or r.stdout or '').strip()}")
+        elif _which("pipx"):
+            note("Installing rdt-cli via pipx…")
+            r = _run(["pipx", "install", "rdt-cli"])
+            if r.returncode == 0:
+                note("OK: rdt-cli — Reddit login in Atlas Chrome profile (docs/tier1.md)")
+            else:
+                note(f"WARN: rdt-cli: {(r.stderr or r.stdout or '').strip()}")
+        else:
+            note("NEED: uv tool install rdt-cli")
+
+    if want_linkedin:
+        repo_li = Path(__file__).resolve().parent.parent / "li-cli"
+        if dry_run or safe:
+            note("NEED: uv tool install -e ./li-cli + playwright install chromium")
+        elif _which("li"):
+            note("OK: li-cli")
+        elif _which("uv") and repo_li.is_dir():
+            note("Installing li-cli from repo via uv tool…")
+            r = _run(["uv", "tool", "install", "-e", str(repo_li)])
+            if r.returncode == 0:
+                _run(["uv", "tool", "run", "--from", "playwright", "playwright", "install", "chromium"])
+                note("OK: li-cli — LinkedIn login in Atlas Chrome, then li login (docs/tier1.md)")
+            else:
+                note(f"WARN: li-cli: {(r.stderr or r.stdout or '').strip()}")
+        else:
+            note("NEED: uv tool install -e ./li-cli (from agent-atlas repo)")
 
     if want_opencli or want_twitter:
         note("Manual step: Chrome login (secondary accounts) + opencli doctor")
@@ -308,7 +349,11 @@ def main(argv: list[str] | None = None) -> None:
     p_inst = sub.add_parser("install", help="Install upstream tools + skill")
     p_inst.add_argument("--safe", action="store_true")
     p_inst.add_argument("--dry-run", action="store_true")
-    p_inst.add_argument("--channels", default="", help="Optional: twitter,reddit,opencli,all")
+    p_inst.add_argument(
+        "--channels",
+        default="",
+        help="Optional: twitter,reddit,linkedin,opencli,all",
+    )
 
     p_conf = sub.add_parser("configure", help="Set a config value")
     p_conf.add_argument("key")

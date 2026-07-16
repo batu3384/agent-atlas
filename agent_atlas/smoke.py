@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from agent_atlas.config import Config, apply_runtime_env
 from agent_atlas.doctor import check_all
@@ -84,12 +84,36 @@ def _smoke_rss() -> SmokeResult:
     return SmokeResult("rss", "pass" if ok else "fail", detail)
 
 
-def _smoke_twitter() -> SmokeResult:
+def _smoke_twitter(backend: Optional[str] = None) -> SmokeResult:
+    if backend == "OpenCLI":
+        ok, detail = _run(
+            ["opencli", "twitter", "search", "AI agents", "-f", "yaml"],
+            timeout=45,
+        )
+        return SmokeResult("twitter", "pass" if ok else "fail", detail)
     ok, detail = _run(["twitter", "search", "AI agents", "-n", "3"], timeout=35)
-    return SmokeResult("twitter", "pass" if ok else "fail", detail)
+    if ok:
+        return SmokeResult("twitter", "pass", detail)
+    ok2, detail2 = _run(
+        ["opencli", "twitter", "search", "AI agents", "-f", "yaml"],
+        timeout=45,
+    )
+    return SmokeResult("twitter", "pass" if ok2 else "fail", detail2 if not ok else detail)
 
 
-def _smoke_reddit() -> SmokeResult:
+def _smoke_reddit(backend: Optional[str] = None) -> SmokeResult:
+    if backend != "OpenCLI":
+        from agent_atlas.rdt_status import rdt_status
+
+        ok_rdt, _, _ = rdt_status()
+        if ok_rdt:
+            ok, detail = _run(
+                ["rdt", "search", "AI agents", "-n", "3", "--compact", "--yaml"],
+                timeout=45,
+            )
+            if ok or "ok: true" in (detail or "").lower():
+                return SmokeResult("reddit", "pass", detail)
+            # fall through to OpenCLI
     ok, detail = _run(
         ["opencli", "reddit", "search", "AI agents", "-f", "yaml"],
         timeout=45,
@@ -97,29 +121,35 @@ def _smoke_reddit() -> SmokeResult:
     return SmokeResult("reddit", "pass" if ok else "fail", detail)
 
 
-def _smoke_linkedin() -> SmokeResult:
-    # Public page via Jina — often blocked anonymously; treat soft errors as skip
-    ok, detail = _run(
-        [
-            "curl",
-            "-sL",
-            "--max-time",
-            "25",
-            "https://r.jina.ai/https://www.linkedin.com/company/github",
-        ],
-        timeout=30,
-    )
-    low = detail.lower()
-    if (not ok) or "abusealleviation" in low or '"code":403' in low or "40305" in low:
-        return SmokeResult(
-            "linkedin",
-            "skip",
-            "Jina anonymous LinkedIn blocked — use OpenCLI when bridge connected",
+def _smoke_linkedin(backend: Optional[str] = None) -> SmokeResult:
+    # Prefer doctor's active_backend; OpenCLI is the reliable LinkedIn path
+    if backend != "li-cli":
+        ok, detail = _run(
+            ["opencli", "linkedin", "people-search", "github", "-f", "yaml"],
+            timeout=60,
         )
-    return SmokeResult("linkedin", "pass", detail)
+        if ok and "profile_url:" in detail:
+            return SmokeResult("linkedin", "pass", detail)
+        opencli_fail = detail
+    else:
+        opencli_fail = ""
+
+    from agent_atlas.li_status import li_status
+
+    ok_li, _, _ = li_status(use_cache=False)
+    if ok_li or backend == "li-cli":
+        ok2, detail2 = _run(
+            ["li", "people-search", "github", "-n", "3", "--yaml"],
+            timeout=90,
+        )
+        if ok2 and "profile_url:" in detail2:
+            return SmokeResult("linkedin", "pass", detail2)
+        return SmokeResult("linkedin", "fail", (detail2 or opencli_fail)[:160])
+
+    return SmokeResult("linkedin", "fail", (opencli_fail or "linkedin smoke failed")[:160])
 
 
-_SMOKES: dict[str, Callable[[], SmokeResult]] = {
+_SMOKES: dict[str, Callable[..., SmokeResult]] = {
     "web": _smoke_web,
     "exa": _smoke_exa,
     "youtube": _smoke_youtube,
@@ -130,12 +160,9 @@ _SMOKES: dict[str, Callable[[], SmokeResult]] = {
     "linkedin": _smoke_linkedin,
 }
 
-# Channels that can smoke even when doctor is warn (public / no login)
-_WARN_OK = {"linkedin"}
-
 
 def run_smoke(config: Config | None = None) -> List[SmokeResult]:
-    """One real research call per channel doctor marks ok (linkedin: Jina if warn)."""
+    """One real research call per channel doctor marks ok — respects active_backend."""
     config = config or Config()
     apply_runtime_env(config)
     health = check_all(config)
@@ -144,12 +171,17 @@ def run_smoke(config: Config | None = None) -> List[SmokeResult]:
     for name, fn in _SMOKES.items():
         status = health.get(name, {}).get("status", "off")
         msg = (health.get(name, {}).get("message") or "")[:80]
+        backend = health.get(name, {}).get("active_backend")
 
         if status == "off":
             results.append(SmokeResult(name, "skip", "disabled / not installed"))
             continue
-        if status == "ok" or (status == "warn" and name in _WARN_OK):
-            results.append(fn())
+        if status == "ok":
+            # Tier-1 smokes accept optional backend; Tier-0 take no args
+            if name in ("twitter", "reddit", "linkedin"):
+                results.append(fn(backend))
+            else:
+                results.append(fn())
             continue
         results.append(SmokeResult(name, "skip", msg or f"doctor={status}"))
 

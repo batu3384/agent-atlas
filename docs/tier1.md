@@ -90,25 +90,71 @@ Direct `twitter` / `opencli` in a bare shell still need the same vars exported (
 
 ---
 
-## Reddit alternative: rdt-cli
+## Reddit — rdt-cli (preferred)
 
-If not using OpenCLI:
+Cookie CLI (like twitter-cli). **No live Chrome bridge required** after cookies are saved.
 
 ```bash
-# see https://github.com/public-clis/rdt-cli
-rdt search "query" --limit 10
+uv tool install rdt-cli
 ```
 
-Requires Reddit cookies; OpenCLI is preferred on desktop.
+1. Log into Reddit in your **Atlas Chrome profile** (`Profile 3`)
+2. `agent-atlas doctor` syncs cookies automatically (uses `twitter_chrome_profile` from config)
+3. Or manually: `rdt login`
+
+```bash
+rdt status
+rdt search "query" -n 10 --compact --yaml
+```
+
+Optional config (defaults to Twitter profile keys):
+
+```bash
+agent-atlas configure reddit_chrome_profile "Profile 3"
+```
+
+### OpenCLI fallback
+
+If rdt-cli is not authenticated but OpenCLI bridge is connected:
+
+```bash
+opencli reddit search "query" -f yaml
+```
 
 ---
 
-## LinkedIn
+## LinkedIn — OpenCLI (preferred)
+
+LinkedIn **rejects headless cookie replay**. Practical path: Chrome open + OpenCLI bridge + signed-in feed.
+
+```bash
+# Atlas Chrome open, OpenCLI extension connected, linkedin.com feed visible
+opencli linkedin people-search "query" -f yaml
+```
+
+Config:
+
+```yaml
+opencli_profile: atlas
+twitter_chrome_profile: Profile 3   # Atlas Chrome profile
+```
+
+### Experimental: li-cli (Chrome closed)
+
+`li-cli` can sync cookies from Profile 3, but LinkedIn usually invalidates the session in headless Chromium. Prefer OpenCLI.
+
+```bash
+uv tool install -e ./li-cli
+# Chrome closed, after a real linkedin.com login in Atlas profile:
+li login --force
+li people-search "github" -n 5 --yaml
+```
+
+### Public pages
 
 | Mode | How |
 |------|-----|
 | Public page read | `curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"` |
-| Richer / logged-in | OpenCLI adapter if listed in `opencli list`, or linkedin-mcp |
 
 ---
 

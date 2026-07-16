@@ -84,3 +84,106 @@ def test_smoke_exit_code() -> None:
     assert smoke_exit_code([SmokeResult("web", "pass", "ok")]) == 0
     assert smoke_exit_code([SmokeResult("web", "skip", "n/a")]) == 0
     assert smoke_exit_code([SmokeResult("web", "fail", "boom")]) == 1
+
+
+def test_rdt_status_parses_authenticated() -> None:
+    from agent_atlas.rdt_status import _parse_yaml_status
+
+    text = "ok: true\nschema_version: '1'\ndata:\n  authenticated: true\n  username: testuser\n"
+    data = _parse_yaml_status(text)
+    assert data.get("authenticated") is True
+    assert data.get("username") == "testuser"
+
+
+def test_li_status_parses_authenticated() -> None:
+    from agent_atlas.li_status import _parse_yaml_status
+
+    text = "ok: true\nschema_version: '1'\ndata:\n  authenticated: true\n  username: johndoe\n"
+    data = _parse_yaml_status(text)
+    assert data.get("authenticated") is True
+    assert data.get("username") == "johndoe"
+
+
+def test_li_status_parses_error_payload() -> None:
+    from agent_atlas.li_status import _parse_yaml_status
+
+    text = "ok: false\nerror:\n  code: AUTH\n  message: session expired\n"
+    data = _parse_yaml_status(text)
+    assert data.get("authenticated") is False
+    assert "expired" in data.get("error", "")
+
+
+def test_chrome_cookie_file_from_config(tmp_config: Config) -> None:
+    from agent_atlas.chrome_profile import chrome_cookie_file
+
+    tmp_config.set("twitter_chrome_profile", "Profile 3")
+    path = chrome_cookie_file(tmp_config)
+    assert path is not None
+    assert path.name == "Cookies"
+    assert str(path).endswith("Profile 3/Cookies")
+
+
+def test_apply_runtime_env_linkedin_profile(tmp_config: Config) -> None:
+    tmp_config.set("linkedin_chrome_profile", "Profile 3")
+    applied = apply_runtime_env(tmp_config, overwrite=True)
+    assert applied["LI_CHROME_PROFILE"] == "Profile 3"
+
+
+def test_apply_runtime_env_reddit_profile(tmp_config: Config) -> None:
+    tmp_config.set("reddit_chrome_profile", "Profile 3")
+    applied = apply_runtime_env(tmp_config, overwrite=True)
+    assert applied["REDDIT_CHROME_PROFILE"] == "Profile 3"
+
+
+def test_linkedin_prefers_opencli_when_bridge_ok(monkeypatch) -> None:
+    from agent_atlas.channels.social import LinkedInChannel
+
+    ch = LinkedInChannel()
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.opencli_installed", lambda: True
+    )
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.opencli_has_adapter", lambda n: n == "linkedin"
+    )
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.opencli_doctor",
+        lambda: ("ok", "bridge ready", None),
+    )
+    monkeypatch.setattr(
+        "agent_atlas.li_status.li_installed", lambda: True
+    )
+    # ensure_li_session must not be required when OpenCLI wins
+    status, msg = ch.check()
+    assert status == "ok"
+    assert ch.active_backend == "OpenCLI"
+    assert "opencli linkedin" in msg
+
+
+def test_twitter_falls_back_to_opencli_when_unauth(monkeypatch) -> None:
+    from agent_atlas.channels.social import TwitterChannel
+    from agent_atlas.probe import ProbeResult
+
+    ch = TwitterChannel()
+
+    def fake_probe(*a, **k):
+        return ProbeResult(
+            status="ok",
+            output="ok: false\nerror: not_authenticated\n",
+            hint="",
+        )
+
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.probe_command", fake_probe
+    )
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.opencli_installed", lambda: True
+    )
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.opencli_doctor",
+        lambda: ("ok", "bridge ready", None),
+    )
+    status, msg = ch.check()
+    assert status == "ok"
+    assert ch.active_backend == "OpenCLI"
+    assert "opencli twitter" in msg
+

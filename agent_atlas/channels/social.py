@@ -21,24 +21,28 @@ class TwitterChannel(Channel):
     def check(self, config=None):
         # Preferred: twitter-cli authenticated
         probe = probe_command("twitter", ["status"], timeout=12, package="twitter-cli")
+        twitter_warn: str | None = None
         if probe.status != "missing":
             if probe.ok and "ok: true" in probe.output:
                 self.active_backend = "twitter-cli"
-                return "ok", "twitter-cli authenticated — twitter search \"q\" -n 10"
-            if "not_authenticated" in probe.output or probe.status in ("broken", "ok", "timeout"):
-                self.active_backend = "twitter-cli"
-                return (
-                    "warn",
-                    "twitter-cli installed — set TWITTER_AUTH_TOKEN + TWITTER_CT0 (docs/tier1.md)",
-                )
+                return "ok", 'twitter-cli authenticated — twitter search "q" -n 10'
+            twitter_warn = "twitter-cli installed — set TWITTER_AUTH_TOKEN + TWITTER_CT0 (docs/tier1.md)"
 
-        # Fallback: OpenCLI
+        # Fallback: OpenCLI (even when twitter-cli exists but is unauthenticated)
         if opencli_installed():
             st, msg, _ = opencli_doctor()
-            self.active_backend = "OpenCLI"
             if st == "ok":
+                self.active_backend = "OpenCLI"
                 return "ok", 'OpenCLI ready — opencli twitter search "q" -f yaml'
+            if twitter_warn:
+                self.active_backend = "twitter-cli"
+                return "warn", f"{twitter_warn}; OpenCLI — {msg}"
+            self.active_backend = "OpenCLI"
             return "warn", f"OpenCLI present — {msg}"
+
+        if twitter_warn:
+            self.active_backend = "twitter-cli"
+            return "warn", twitter_warn
 
         self.active_backend = None
         return "off", "Install twitter-cli (pipx) or OpenCLI — docs/tier1.md"
@@ -47,24 +51,45 @@ class TwitterChannel(Channel):
 class RedditChannel(Channel):
     name = "reddit"
     description = "Reddit"
-    backends = ["OpenCLI", "rdt-cli"]
+    backends = ["rdt-cli", "OpenCLI"]
     tier = 1
 
     def can_handle(self, url: str) -> bool:
         return "reddit.com" in urlparse(url).netloc.lower()
 
     def check(self, config=None):
+        from agent_atlas.config import Config as Cfg
+        from agent_atlas.rdt_status import ensure_rdt_session, rdt_installed
+
+        config = config or Cfg()
+
+        # Preferred: rdt-cli (cookie on disk — no live Chrome bridge)
+        if rdt_installed():
+            ok, msg = ensure_rdt_session(config)
+            self.active_backend = "rdt-cli"
+            if ok:
+                return "ok", msg
+            rdt_warn = msg
+
+            # Fallback: OpenCLI when bridge is up
+            if opencli_installed():
+                st, omsg, _ = opencli_doctor()
+                if st == "ok":
+                    self.active_backend = "OpenCLI"
+                    return "ok", 'OpenCLI ready — opencli reddit search "q" -f yaml'
+                return "warn", f"{rdt_warn}; OpenCLI — {omsg}"
+
+            return "warn", rdt_warn
+
         if opencli_installed():
             st, msg, _ = opencli_doctor()
             self.active_backend = "OpenCLI"
             if st == "ok":
                 return "ok", 'OpenCLI ready — opencli reddit search "q" -f yaml'
             return "warn", f"OpenCLI present — {msg}"
-        if which("rdt"):
-            self.active_backend = "rdt-cli"
-            return "warn", "rdt-cli found — needs Reddit cookies (docs/tier1.md)"
+
         self.active_backend = None
-        return "off", "Reddit: install OpenCLI + Chrome login — docs/tier1.md"
+        return "off", "Reddit: uv tool install rdt-cli + Atlas profile login — docs/tier1.md"
 
 
 class FacebookChannel(Channel):
@@ -110,19 +135,42 @@ class InstagramChannel(Channel):
 class LinkedInChannel(Channel):
     name = "linkedin"
     description = "LinkedIn"
-    backends = ["OpenCLI", "Jina Reader", "linkedin-mcp"]
+    backends = ["OpenCLI", "li-cli", "Jina Reader"]
     tier = 1
 
     def can_handle(self, url: str) -> bool:
         return "linkedin.com" in urlparse(url).netloc.lower()
 
     def check(self, config=None):
+        from agent_atlas.config import Config as Cfg
+        from agent_atlas.li_status import ensure_li_session, li_installed
+
+        config = config or Cfg()
+
+        # LinkedIn blocks headless cookie replay — prefer OpenCLI when bridge is up
         if opencli_installed() and opencli_has_adapter("linkedin"):
             st, msg, _ = opencli_doctor()
-            self.active_backend = "OpenCLI"
             if st == "ok":
-                return "ok", "OpenCLI LinkedIn adapter ready"
-            return "warn", f"OpenCLI LinkedIn — {msg}"
+                self.active_backend = "OpenCLI"
+                return "ok", 'OpenCLI ready — opencli linkedin people-search "q" -f yaml'
+            opencli_warn = msg
+        else:
+            opencli_warn = None
+
+        if li_installed():
+            ok, msg = ensure_li_session(config)
+            if ok:
+                self.active_backend = "li-cli"
+                return "ok", msg
+            if opencli_warn:
+                self.active_backend = "OpenCLI"
+                return "warn", f"{msg}; OpenCLI — {opencli_warn}"
+            self.active_backend = "li-cli"
+            return "warn", msg
+
+        if opencli_warn is not None:
+            self.active_backend = "OpenCLI"
+            return "warn", f"OpenCLI LinkedIn — {opencli_warn}"
 
         if http_ok("https://r.jina.ai/", timeout=8):
             self.active_backend = "Jina Reader"
@@ -131,4 +179,4 @@ class LinkedInChannel(Channel):
                 "Public pages via Jina — curl -s https://r.jina.ai/https://www.linkedin.com/…",
             )
         self.active_backend = None
-        return "off", "LinkedIn: OpenCLI, Jina, or linkedin-mcp — docs/tier1.md"
+        return "off", "LinkedIn: OpenCLI bridge + linkedin.com login — docs/tier1.md"

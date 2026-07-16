@@ -11,11 +11,13 @@ from agent_atlas.config import Config
 
 def check_all(config: Config | None = None) -> Dict[str, dict]:
     from agent_atlas.config import apply_runtime_env
+    from agent_atlas.li_status import clear_li_cache
     from agent_atlas.opencli_status import clear_opencli_cache
 
     config = config or Config()
     apply_runtime_env(config)
     clear_opencli_cache()
+    clear_li_cache()
 
     disabled = config.disabled_channels()
     results = {}

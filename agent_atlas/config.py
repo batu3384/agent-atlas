@@ -17,6 +17,10 @@ _ENV_MAP = {
     "twitter_auth_token": "TWITTER_AUTH_TOKEN",
     "twitter_ct0": "TWITTER_CT0",
     "opencli_profile": "OPENCLI_PROFILE",
+    "linkedin_chrome_profile": "LI_CHROME_PROFILE",
+    "linkedin_browser": "LI_BROWSER",
+    "reddit_chrome_profile": "REDDIT_CHROME_PROFILE",
+    "reddit_browser": "REDDIT_BROWSER",
 }
 
 

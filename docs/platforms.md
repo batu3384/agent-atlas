@@ -19,10 +19,10 @@ Full setup: [tier1.md](tier1.md)
 | Channel | Backend order | Example |
 |---------|---------------|---------|
 | **twitter** | twitter-cli → OpenCLI | `twitter search "q" -n 10` · `opencli twitter search "q" -f yaml` |
-| **reddit** | OpenCLI → rdt-cli | `opencli reddit search "q" -f yaml` |
+| **reddit** | rdt-cli → OpenCLI | `rdt search "q" -n 10` · `opencli reddit search "q" -f yaml` |
 | **facebook** | OpenCLI | `opencli facebook search "q" -f yaml` |
 | **instagram** | OpenCLI | `opencli instagram search "q" -f yaml` |
-| **linkedin** | OpenCLI → Jina | `curl -s "https://r.jina.ai/https://www.linkedin.com/…"` |
+| **linkedin** | OpenCLI → li-cli (exp.) → Jina | `opencli linkedin people-search "q" -f yaml` |
 
 Doctor statuses: `ok` = session ready · `warn` = installed, login needed · `off` = not installed.
 
