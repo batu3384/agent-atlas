@@ -31,6 +31,14 @@ Install Agent Atlas and Tier 0 upstream tools so the user can search and researc
 
 ### Step 1 — Install the package
 
+Preferred (PyPI):
+
+```bash
+pip install agent-atlas
+```
+
+Or from a clone:
+
 ```bash
 cd /path/to/agent-atlas
 python3 -m venv ~/.agent-atlas-venv

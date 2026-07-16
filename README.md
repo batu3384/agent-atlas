@@ -21,7 +21,15 @@ Tell your AI agent:
 Install Agent Atlas using docs/install.md in this repo.
 ```
 
-Or manually:
+Or from PyPI:
+
+```bash
+pip install agent-atlas
+agent-atlas install
+agent-atlas doctor
+```
+
+Or from this repo:
 
 ```bash
 cd ~/Documents/agent-atlas   # or clone path
