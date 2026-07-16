@@ -116,8 +116,6 @@ agent-atlas doctor
 agent-atlas doctor --json
 agent-atlas smoke
 agent-atlas smoke --json
-agent-atlas smoke
-agent-atlas smoke --json
 ```
 
 ### Uninstall
