@@ -1,0 +1,39 @@
+[project]
+name = "agent-atlas"
+version = "0.1.0"
+description = "Search and research the open web for your AI agent."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{name = "Agent Atlas"}]
+keywords = [
+    "ai-agent",
+    "llm-tools",
+    "web-research",
+    "claude-code",
+    "cursor",
+    "cli",
+]
+dependencies = [
+    "feedparser>=6.0",
+    "pyyaml>=6.0",
+    "requests>=2.28",
+    "rich>=13.0",
+    "yt-dlp>=2024.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+agent-atlas = "agent_atlas.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/batu3384/agent-atlas"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent_atlas"]
