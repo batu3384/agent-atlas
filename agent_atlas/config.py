@@ -17,11 +17,13 @@ _ENV_MAP = {
     "twitter_auth_token": "TWITTER_AUTH_TOKEN",
     "twitter_ct0": "TWITTER_CT0",
     "opencli_profile": "OPENCLI_PROFILE",
-    "linkedin_chrome_profile": "LI_CHROME_PROFILE",
-    "linkedin_browser": "LI_BROWSER",
     "reddit_chrome_profile": "REDDIT_CHROME_PROFILE",
     "reddit_browser": "REDDIT_BROWSER",
 }
+
+
+class ConfigError(ValueError):
+    """Malformed or unreadable config.yaml."""
 
 
 class Config:
@@ -41,11 +43,22 @@ class Config:
             os.chmod(self.config_dir, 0o700)
 
     def load(self) -> None:
-        if self.config_path.exists():
-            with open(self.config_path, encoding="utf-8") as f:
-                self.data = yaml.safe_load(f) or {}
-        else:
+        if not self.config_path.exists():
             self.data = {}
+            return
+        try:
+            with open(self.config_path, encoding="utf-8") as f:
+                raw = yaml.safe_load(f)
+        except (OSError, yaml.YAMLError) as e:
+            raise ConfigError(f"Cannot read {self.config_path}: {e}") from e
+        if raw is None:
+            self.data = {}
+            return
+        if not isinstance(raw, dict):
+            raise ConfigError(
+                f"{self.config_path} must be a YAML mapping (got {type(raw).__name__})"
+            )
+        self.data = raw
 
     def save(self) -> None:
         self._ensure_dir()
@@ -65,7 +78,6 @@ class Config:
         env_key = key.upper()
         if env_key in os.environ:
             return os.environ[env_key]
-        # also try mapped env names
         mapped = _ENV_MAP.get(key)
         if mapped and mapped in os.environ:
             return os.environ[mapped]
@@ -88,11 +100,7 @@ class Config:
         self.save()
 
     def apply_runtime_env(self, *, overwrite: bool = False) -> dict[str, str]:
-        """Export config values into os.environ for upstream CLIs.
-
-        By default does not override variables already set in the shell.
-        Returns the dict of keys that were applied this call.
-        """
+        """Export config values into os.environ for upstream CLIs."""
         applied: dict[str, str] = {}
         for cfg_key, env_key in _ENV_MAP.items():
             val = self.data.get(cfg_key)

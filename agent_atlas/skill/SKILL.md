@@ -57,5 +57,5 @@ python -c "import feedparser; print(feedparser.parse('FEED_URL').entries[:5])"
 ```
 Install: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/install.md
 Update: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/update.md
-Troubleshoot: docs/troubleshooting.md
+Channels: docs/channels.md · Troubleshoot: docs/troubleshooting.md
 ```

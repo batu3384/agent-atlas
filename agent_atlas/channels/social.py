@@ -6,10 +6,9 @@ from urllib.parse import urlparse
 from agent_atlas.channels.base import Channel
 from agent_atlas.opencli_status import (
     opencli_doctor,
-    opencli_has_adapter,
     opencli_installed,
 )
-from agent_atlas.probe import http_ok, probe_command, which
+from agent_atlas.probe import http_ok, probe_command
 
 
 class TwitterChannel(Channel):
@@ -153,16 +152,24 @@ class LinkedInChannel(Channel):
         if mcp_st == "ok":
             self.active_backend = "linkedin-mcp"
             return "ok", mcp_msg
+
+        # MCP missing/off/error → still offer public Jina when reachable
+        if http_ok("https://r.jina.ai/", timeout=8):
+            self.active_backend = "Jina Reader"
+            prefix = "Public LinkedIn via Jina"
+            if mcp_st == "error":
+                return (
+                    "warn",
+                    f"{prefix} — curl -s https://r.jina.ai/https://www.linkedin.com/in/… "
+                    f"| MCP probe failed: {mcp_msg}",
+                )
+            return (
+                "warn",
+                f"{prefix} — curl -s https://r.jina.ai/https://www.linkedin.com/in/… "
+                f"| Full access: {mcp_msg}",
+            )
         if mcp_st == "error":
             self.active_backend = None
             return "error", mcp_msg
-
-        if http_ok("https://r.jina.ai/", timeout=8):
-            self.active_backend = "Jina Reader"
-            return (
-                "warn",
-                "Public LinkedIn via Jina — curl -s https://r.jina.ai/https://www.linkedin.com/… "
-                f"| Full access: {mcp_msg}",
-            )
         self.active_backend = None
         return "off", f"LinkedIn: {mcp_msg}"

@@ -76,11 +76,13 @@ def _smoke_github() -> SmokeResult:
 
 
 def _smoke_rss() -> SmokeResult:
+    import sys
+
     code = (
         "import feedparser; d=feedparser.parse('https://hnrss.org/frontpage'); "
         "assert d.entries; print(d.entries[0].title)"
     )
-    ok, detail = _run(["python3", "-c", code], timeout=25)
+    ok, detail = _run([sys.executable, "-c", code], timeout=25)
     return SmokeResult("rss", "pass" if ok else "fail", detail)
 
 
@@ -121,8 +123,24 @@ def _smoke_reddit(backend: Optional[str] = None) -> SmokeResult:
     return SmokeResult("reddit", "pass" if ok else "fail", detail)
 
 
+def _smoke_facebook(backend: Optional[str] = None) -> SmokeResult:
+    ok, detail = _run(
+        ["opencli", "facebook", "search", "AI agents", "-f", "yaml"],
+        timeout=45,
+    )
+    return SmokeResult("facebook", "pass" if ok else "fail", detail)
+
+
+def _smoke_instagram(backend: Optional[str] = None) -> SmokeResult:
+    ok, detail = _run(
+        ["opencli", "instagram", "search", "AI", "-f", "yaml"],
+        timeout=45,
+    )
+    return SmokeResult("instagram", "pass" if ok else "fail", detail)
+
+
 def _smoke_linkedin(backend: Optional[str] = None) -> SmokeResult:
-    """Reach-style: MCP configured ⇒ pass; else probe Jina public page."""
+    """MCP configured ⇒ pass; else probe a public LinkedIn profile via Jina."""
     from agent_atlas.linkedin_mcp import linkedin_mcp_configured
     from agent_atlas.probe import http_ok
 
@@ -132,11 +150,13 @@ def _smoke_linkedin(backend: Optional[str] = None) -> SmokeResult:
             "pass",
             "linkedin-mcp ready — use agent MCP tools (search_people, …)",
         )
-    if http_ok("https://r.jina.ai/https://www.linkedin.com", timeout=15):
+    # Public company page (more representative than bare linkedin.com)
+    url = "https://r.jina.ai/https://www.linkedin.com/company/github"
+    if http_ok(url, timeout=15):
         return SmokeResult(
             "linkedin",
             "pass",
-            "Jina public page OK — curl -s https://r.jina.ai/https://www.linkedin.com/…",
+            "Jina public page OK — curl -s https://r.jina.ai/https://www.linkedin.com/in/…",
         )
     return SmokeResult("linkedin", "fail", "LinkedIn smoke: configure linkedin-mcp or check Jina")
 
@@ -149,12 +169,19 @@ _SMOKES: dict[str, Callable[..., SmokeResult]] = {
     "rss": _smoke_rss,
     "twitter": _smoke_twitter,
     "reddit": _smoke_reddit,
+    "facebook": _smoke_facebook,
+    "instagram": _smoke_instagram,
     "linkedin": _smoke_linkedin,
 }
 
+_TIER1_SMOKE = frozenset({"twitter", "reddit", "facebook", "instagram", "linkedin"})
+
 
 def run_smoke(config: Config | None = None) -> List[SmokeResult]:
-    """One real research call per channel doctor marks ok — respects active_backend."""
+    """One real research call per ready channel — respects active_backend.
+
+    Status rules: `ok` → smoke; LinkedIn `warn` (Jina public) → smoke; else skip.
+    """
     config = config or Config()
     apply_runtime_env(config)
     health = check_all(config)
@@ -169,8 +196,7 @@ def run_smoke(config: Config | None = None) -> List[SmokeResult]:
             results.append(SmokeResult(name, "skip", "disabled / not installed"))
             continue
         if status == "ok" or (status == "warn" and name == "linkedin"):
-            # LinkedIn warn = Jina public-only; ok = MCP ready
-            if name in ("twitter", "reddit", "linkedin"):
+            if name in _TIER1_SMOKE:
                 results.append(fn(backend))
             else:
                 results.append(fn())

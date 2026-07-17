@@ -106,12 +106,6 @@ def test_chrome_cookie_file_from_config(tmp_config: Config) -> None:
     assert str(path).endswith("Profile 3/Cookies")
 
 
-def test_apply_runtime_env_linkedin_profile(tmp_config: Config) -> None:
-    tmp_config.set("linkedin_chrome_profile", "Profile 3")
-    applied = apply_runtime_env(tmp_config, overwrite=True)
-    assert applied["LI_CHROME_PROFILE"] == "Profile 3"
-
-
 def test_apply_runtime_env_reddit_profile(tmp_config: Config) -> None:
     tmp_config.set("reddit_chrome_profile", "Profile 3")
     applied = apply_runtime_env(tmp_config, overwrite=True)
@@ -295,4 +289,75 @@ def test_twitter_falls_back_to_opencli_when_unauth(monkeypatch) -> None:
     assert status == "ok"
     assert ch.active_backend == "OpenCLI"
     assert "opencli twitter" in msg
+
+
+def test_linkedin_broken_mcporter_falls_back_to_jina(monkeypatch) -> None:
+    from agent_atlas.channels.social import LinkedInChannel
+
+    ch = LinkedInChannel()
+    monkeypatch.setattr(
+        "agent_atlas.linkedin_mcp.linkedin_mcp_status",
+        lambda: ("error", "mcporter broken — reinstall", {"configured": False}),
+    )
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.http_ok", lambda *a, **k: True
+    )
+    status, msg = ch.check()
+    assert status == "warn"
+    assert ch.active_backend == "Jina Reader"
+    assert "jina" in msg.lower()
+
+
+def test_config_rejects_non_mapping(tmp_path) -> None:
+    from agent_atlas.config import Config, ConfigError
+
+    path = tmp_path / "config.yaml"
+    path.write_text("- just\n- a\n- list\n", encoding="utf-8")
+    with pytest.raises(ConfigError, match="mapping"):
+        Config(config_path=path)
+
+
+def test_probe_command_oserror(monkeypatch) -> None:
+    from agent_atlas import probe as probe_mod
+    from agent_atlas.probe import probe_command
+
+    monkeypatch.setattr(probe_mod, "which", lambda c: "/usr/bin/fake")
+
+    def boom(*a, **k):
+        raise OSError("nope")
+
+    monkeypatch.setattr(probe_mod.subprocess, "run", boom)
+    result = probe_command("fake", [])
+    assert result.status == "broken"
+    assert "OS error" in result.hint
+
+
+def test_smoke_covers_all_doctor_channels() -> None:
+    from agent_atlas.channels import get_all_channels
+    from agent_atlas.smoke import _SMOKES
+
+    names = {ch.name for ch in get_all_channels()}
+    assert names == set(_SMOKES.keys())
+
+
+def test_skill_root_matches_packaged() -> None:
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    packaged = (root / "agent_atlas" / "skill" / "SKILL.md").read_text(encoding="utf-8")
+    top = (root / "SKILL.md").read_text(encoding="utf-8")
+    assert packaged == top
+
+
+def test_mcporter_linkedin_requires_line_token(monkeypatch) -> None:
+    from agent_atlas import linkedin_mcp as lm
+    from agent_atlas.probe import ProbeResult
+
+    monkeypatch.setattr(lm, "_mcp_config_paths", lambda: [])
+    monkeypatch.setattr(
+        lm,
+        "probe_command",
+        lambda *a, **k: ProbeResult("ok", output="exa\nsome-linkedin-notes server\n"),
+    )
+    assert lm.linkedin_mcp_configured() is False
 

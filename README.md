@@ -17,7 +17,7 @@ Agent Atlas is a **capability layer**: it installs, health-checks, and routes fr
 | **Install** | Sets up Tier 0 tools (+ optional Tier 1 CLIs) and registers `SKILL.md` for Cursor / Claude Code / agents |
 | **Doctor** | Per-channel health: `ok` / `warn` / `off` + `active_backend` (JSON for agents) |
 | **Smoke** | One real research call per ready channel — proves end-to-end wiring |
-| **Config** | `~/.agent-atlas/config.yaml` → runtime env (`TWITTER_*`, `LI_*`, `OPENCLI_PROFILE`, …) |
+| **Config** | `~/.agent-atlas/config.yaml` → runtime env (`TWITTER_*`, `OPENCLI_PROFILE`, `REDDIT_*`, …) |
 | **Routing** | Prefer Tier 0; Tier 1 uses cookie CLIs first, OpenCLI bridge when needed |
 
 ---
@@ -86,7 +86,7 @@ agent-atlas configure twitter_chrome_profile "Profile 3"
 agent-atlas configure opencli_profile atlas
 ```
 
-Ensure `~/.local/bin` is on your `PATH` if you use `uv tool install` for `agent-atlas`, `rdt`, or `li`.
+Ensure `~/.local/bin` is on your `PATH` if you use `uv tool install` for `agent-atlas-cli` or `rdt-cli`.
 
 ---
 
@@ -112,6 +112,10 @@ agent-atlas uninstall
 ## Example research (after doctor is green)
 
 ```bash
+# Prefer doctor JSON for routing
+agent-atlas doctor --json
+# → use each channel's active_backend
+
 # Tier 0
 curl -s "https://r.jina.ai/https://example.com"
 mcporter call 'exa.web_search_exa(query: "AI agents 2026", numResults: 5)'
@@ -122,7 +126,7 @@ python3 -c "import feedparser; print([e.title for e in feedparser.parse('https:/
 # Tier 1
 twitter search "AI agents" -n 10
 rdt search "AI agents" -n 10 --compact --yaml
-# LinkedIn: agent MCP tools after `uvx linkedin-scraper-mcp@latest --login`
+# LinkedIn: agent MCP tools after linkedin-scraper-mcp login
 curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
 ```
 
@@ -142,6 +146,7 @@ curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
 
 | Doc | Contents |
 |-----|----------|
+| [docs/channels.md](docs/channels.md) | Doctor/smoke status contract |
 | [docs/install.md](docs/install.md) | Install for agents & humans |
 | [docs/tier1.md](docs/tier1.md) | Twitter / Reddit / LinkedIn / OpenCLI / MCP |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Common failures & fixes |

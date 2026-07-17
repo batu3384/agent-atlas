@@ -26,7 +26,15 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest -q
+        run: pytest tests/ -q
+
+      - name: Stale-term guard
+        run: |
+          if grep -RInE --exclude=CHANGELOG.md 'li login|`li`|PATH.*\bli\b' README.md docs SKILL.md agent_atlas/skill 2>/dev/null; then
+            echo "Stale li-cli references found"
+            exit 1
+          fi
+          echo "stale-term OK"
 
   wheel-gate:
     runs-on: ubuntu-latest
@@ -44,7 +52,7 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build
 
-      - name: Verify wheel contents
+      - name: Verify wheel + clean install
         run: |
           python - <<'PY'
           import collections
@@ -55,6 +63,11 @@ jobs:
           names = zipfile.ZipFile(whl).namelist()
           dupes = [n for n, c in collections.Counter(names).items() if c > 1]
           assert not dupes, f"duplicate entries in wheel: {dupes}"
-          assert any(n.endswith("agent_atlas/skill/SKILL.md") for n in names), "SKILL.md missing from wheel"
+          assert any(n.endswith("agent_atlas/skill/SKILL.md") for n in names), "SKILL.md missing"
+          assert any("/references/web.md" in n for n in names), "skill references missing"
           print("wheel OK:", whl)
           PY
+          python -m venv /tmp/atlas-wheel-venv
+          /tmp/atlas-wheel-venv/bin/pip install dist/*.whl
+          /tmp/atlas-wheel-venv/bin/agent-atlas --help
+          /tmp/atlas-wheel-venv/bin/python -c "import agent_atlas; print(agent_atlas.__version__)"

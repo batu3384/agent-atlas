@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -15,8 +14,29 @@ from agent_atlas import __version__
 from agent_atlas.config import Config
 
 
-def _run(cmd: list[str], check: bool = False) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, capture_output=True, text=True, check=check)
+def _run(
+    cmd: list[str],
+    check: bool = False,
+    *,
+    timeout: float = 120,
+) -> subprocess.CompletedProcess:
+    try:
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=check,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as e:
+        return subprocess.CompletedProcess(
+            cmd,
+            124,
+            stdout=e.stdout or "",
+            stderr=(e.stderr or "") + f"\ntimeout after {timeout}s",
+        )
+    except OSError as e:
+        return subprocess.CompletedProcess(cmd, 1, stdout="", stderr=str(e))
 
 
 def _which(name: str) -> str | None:
@@ -49,9 +69,12 @@ def cmd_install(*, safe: bool = False, dry_run: bool = False, channels: str = ""
 
     note(f"Agent Atlas v{__version__} install (safe={safe} dry_run={dry_run})")
 
-    # Ensure config dir
-    cfg = Config()
-    note(f"Config dir: {cfg.config_dir}")
+    # Config dir: only create on real install (safe/dry-run = probe-only)
+    if safe or dry_run:
+        note(f"SAFE/DRY: would use config dir {Config.CONFIG_DIR} (not creating)")
+    else:
+        cfg = Config()
+        note(f"Config dir: {cfg.config_dir}")
 
     # Python deps already from pip install; ensure yt-dlp on PATH
     if not _which("yt-dlp"):
@@ -59,7 +82,11 @@ def cmd_install(*, safe: bool = False, dry_run: bool = False, channels: str = ""
             note("NEED: yt-dlp (pip install yt-dlp)")
         else:
             note("Installing yt-dlp via pip…")
-            _run([sys.executable, "-m", "pip", "install", "yt-dlp"])
+            r = _run([sys.executable, "-m", "pip", "install", "yt-dlp"], timeout=180)
+            if r.returncode == 0:
+                note("OK: yt-dlp")
+            else:
+                note(f"WARN: yt-dlp install failed: {(r.stderr or r.stdout or '').strip()}")
     else:
         note("OK: yt-dlp")
 
@@ -118,11 +145,13 @@ def cmd_install(*, safe: bool = False, dry_run: bool = False, channels: str = ""
                         note(f"WARN: exa {scope}: {err or 'failed'}")
     note("Web read needs no install: curl -s https://r.jina.ai/URL")
 
-    # Skill registration
-    if not dry_run:
-        cmd_skill_install()
-    else:
+    # Skill registration (not in --safe / --dry-run)
+    if safe:
+        note("SAFE: skip skill install (probe-only)")
+    elif dry_run:
         note("DRY-RUN: would install SKILL.md to agent skill dirs")
+    else:
+        cmd_skill_install()
 
     wanted = {c.strip().lower() for c in channels.split(",") if c.strip()}
     want_all = "all" in wanted
@@ -392,10 +421,13 @@ def cmd_watch(*, as_json: bool = False) -> int:
 
 
 def main(argv: list[str] | None = None) -> None:
-    from agent_atlas.config import apply_runtime_env
+    from agent_atlas.config import ConfigError, apply_runtime_env
 
-    # Always load ~/.agent-atlas/config.yaml into env for upstream CLIs
-    apply_runtime_env()
+    try:
+        apply_runtime_env()
+    except ConfigError as e:
+        print(f"Config error: {e}", file=sys.stderr)
+        sys.exit(2)
 
     parser = argparse.ArgumentParser(
         prog="agent-atlas",

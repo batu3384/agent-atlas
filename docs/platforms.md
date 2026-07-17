@@ -2,6 +2,8 @@
 
 Agent Atlas routes to these upstream tools. Prefer `agent-atlas doctor --json` → `active_backend`.
 
+Status contract: [channels.md](channels.md).
+
 ## Tier 0
 
 | Channel | Backend | Example |

@@ -1,21 +1,29 @@
 # Web pages & RSS
 
-## Jina Reader (any public URL)
+## Capabilities
+- Read any public URL as clean markdown
+- Parse RSS / Atom feeds
+
+## Prerequisites
+- Network access; `curl` for Jina; Python + `feedparser` (bundled with agent-atlas)
+
+## Doctor
+- `web` → usually `ok` (Jina)
+- `rss` → `ok` when feedparser import works
+
+## Commands
 
 ```bash
 curl -s "https://r.jina.ai/https://example.com"
-```
-
-Returns clean markdown. Prefer this for article/page reads.
-
-## RSS / Atom
-
-```bash
 python -c "import feedparser; [print(e.title, e.link) for e in feedparser.parse('FEED_URL').entries[:10]]"
 ```
 
 ## Retry
+1. Jina timeout → retry once
+2. Paywalled page → matching Tier 1 channel if any
 
-1. Jina timeout → retry once; then open URL in browser / ask user
-2. Paywalled / login-gated page → Tier 1 channel if platform matches (LinkedIn → career.md)
-3. Never scrape HTML yourself when Jina works
+## Fallback
+Open URL in browser / ask user — do not invent HTML scrapers.
+
+## Safety
+Temp files → `/tmp/`. Do not write into the project workspace.

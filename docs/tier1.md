@@ -1,7 +1,8 @@
 # Tier 1 — login channels
 
-Twitter, Reddit, Facebook, Instagram, and LinkedIn need a **browser session** or cookies.
-Agent Atlas does not scrape these itself — it routes to **OpenCLI** and/or **twitter-cli**.
+Twitter, Reddit, Facebook, and Instagram need a **browser session** or cookies (OpenCLI / twitter-cli / rdt-cli).
+**LinkedIn** uses linkedin-scraper-mcp → Jina (not OpenCLI) — see LinkedIn section below.
+Agent Atlas does not scrape these itself — it routes to upstream tools.
 
 ## Security (read first)
 
@@ -168,7 +169,15 @@ Public page (no login):
 curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
 ```
 
-`agent-atlas doctor` shows `linkedin-mcp` as **ok** when `mcporter config list` includes LinkedIn or Cursor/Claude MCP config references `linkedin-scraper-mcp`. Without MCP, doctor falls back to **Jina Reader** (`warn`) for public pages.
+`agent-atlas doctor` shows `linkedin-mcp` as **ok** when `mcporter config list` includes a `linkedin` entry **or** Cursor/Claude MCP config references `linkedin-scraper-mcp`. Without MCP, doctor falls back to **Jina Reader** (`warn`) for public pages.
+
+### Checklist
+
+1. `uvx linkedin-scraper-mcp@latest --login` (secondary account)
+2. Valid JSON in `~/.cursor/mcp.json` (or mcporter HTTP)
+3. Restart Cursor / MCP host
+4. Confirm LinkedIn MCP tools appear in the agent
+5. `agent-atlas doctor --json` → `linkedin.status` == `ok`, `active_backend` == `linkedin-mcp`
 
 ---
 

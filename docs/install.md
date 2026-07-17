@@ -48,17 +48,17 @@ Install Agent Atlas and Tier 0 upstream tools so the user can search and researc
 
 ### Step 1 — Install the package
 
-Prefer PyPI when the package is published; otherwise install from GitHub.
+PyPI package **`agent-atlas-cli`** is published (CLI binary: `agent-atlas`). Git install remains a fallback.
 
 ```bash
-# Recommended (PyPI distribution name: agent-atlas-cli → CLI: agent-atlas)
+# Recommended (PyPI)
 uv tool install agent-atlas-cli
 # or
 pipx install agent-atlas-cli
 # or
 pip install agent-atlas-cli
 
-# Fallback (git — always works)
+# Fallback (git)
 uv tool install git+https://github.com/batu3384/agent-atlas.git
 # or
 pipx install git+https://github.com/batu3384/agent-atlas.git
@@ -71,18 +71,25 @@ source ~/.agent-atlas-venv/bin/activate
 pip install -e .
 ```
 
-Ensure `~/.local/bin` is on `PATH` when using `uv tool` / `pipx`.
+Ensure `~/.local/bin` is on `PATH` when using `uv tool` / `pipx`. Verify:
 
-**Maintainers — publish a release:** create a GitHub Release; `.github/workflows/publish.yml` uploads to PyPI as **`agent-atlas-cli`** via Trusted Publishing (configure once on pypi.org).
+```bash
+command -v agent-atlas
+agent-atlas --version
+```
+
+**Maintainers — publish a release:** create a GitHub Release; `.github/workflows/publish.yml` uploads to PyPI as **`agent-atlas-cli`** via Trusted Publishing.
 
 ### Step 2 — Run installer
 
 ```bash
 agent-atlas install
-# preview:
-agent-atlas install --dry-run
+# preview only (no config dir, no skill install, no package installs):
 agent-atlas install --safe
+agent-atlas install --dry-run
 ```
+
+`--safe` / `--dry-run` print what is needed without mutating the system (except reading PATH).
 
 This will:
 

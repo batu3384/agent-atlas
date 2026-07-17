@@ -6,7 +6,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 from dataclasses import dataclass
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 
 @dataclass
@@ -46,6 +46,12 @@ def probe_command(
         )
     except FileNotFoundError:
         return ProbeResult("broken", hint=f"{cmd} exists on PATH but failed to start")
+    except PermissionError as e:
+        return ProbeResult("broken", hint=f"{cmd} permission denied: {e}")
+    except OSError as e:
+        return ProbeResult("broken", hint=f"{cmd} OS error: {e}")
+    except UnicodeDecodeError as e:
+        return ProbeResult("broken", hint=f"{cmd} output decode error: {e}")
     except subprocess.TimeoutExpired:
         return ProbeResult("timeout", hint=f"{cmd} timed out after {timeout}s")
 

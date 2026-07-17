@@ -1,25 +1,27 @@
 # Search (Exa via mcporter)
 
-## Primary
+## Capabilities
+- Semantic web search (Exa MCP, free hosted endpoint)
+
+## Prerequisites
+- `mcporter` + Exa config (`agent-atlas install` adds it)
+
+## Doctor
+- `exa` → `ok` when mcporter + Exa registered
+
+## Commands
 
 ```bash
 mcporter call 'exa.web_search_exa(query: "query", numResults: 5)'
-```
-
-Free Exa MCP endpoint — configured by `agent-atlas install`.
-
-## Site-scoped fallback
-
-When a login CLI is down, search the open web with a site filter:
-
-```bash
 mcporter call 'exa.web_search_exa(query: "site:x.com topic", numResults: 5)'
-mcporter call 'exa.web_search_exa(query: "site:reddit.com topic", numResults: 5)'
-mcporter call 'exa.web_search_exa(query: "site:linkedin.com topic", numResults: 5)'
 ```
 
 ## Retry
+1. `mcporter` missing → `npm i -g mcporter`
+2. Exa absent → `mcporter config add exa https://mcp.exa.ai/mcp`
 
-1. `mcporter` missing → `npm i -g mcporter` then `agent-atlas install`
-2. Exa not in config → `mcporter config add exa https://mcp.exa.ai/mcp`
-3. Call fails → check `mcporter config list`; see `docs/troubleshooting.md`
+## Fallback
+Site-scoped Exa when a login CLI is down (Twitter/Reddit/LinkedIn).
+
+## Safety
+No API key required for the default Exa MCP endpoint.

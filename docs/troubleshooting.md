@@ -105,10 +105,15 @@ Some videos have no captions. Retry with `--write-auto-sub`. If still empty, tel
 `agent-atlas: command not found`:
 
 ```bash
-# ensure ~/.local/bin on PATH (uv tool / pipx)
 uv tool install agent-atlas-cli
-# or until PyPI mirrors: uv tool install git+https://github.com/batu3384/agent-atlas.git
+# ensure tool bin on PATH
+export PATH="$(uv tool dir --bin):$PATH"   # or ~/.local/bin
+command -v agent-atlas
+agent-atlas --version
+# shell reload: exec $SHELL -l
 ```
+
+Git fallback: `uv tool install git+https://github.com/batu3384/agent-atlas.git`
 
 ---
 

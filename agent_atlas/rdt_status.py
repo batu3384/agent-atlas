@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 from pathlib import Path
 from typing import Optional, Tuple
@@ -57,6 +56,8 @@ path.chmod(0o600)
 print("ok")
 '''
     try:
+        if which("uv") is None:
+            return False
         proc = subprocess.run(
             ["uv", "run", "--with", "browser-cookie3", "python3", "-c", script],
             capture_output=True,
@@ -65,7 +66,7 @@ print("ok")
             check=False,
         )
         return proc.returncode == 0 and "ok" in (proc.stdout or "")
-    except (FileNotFoundError, subprocess.TimeoutExpired):
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
         return False
 
 
@@ -128,8 +129,14 @@ def ensure_rdt_session(config: Config, *, sync: bool = True) -> Tuple[bool, str]
     ok, msg, _ = rdt_status()
     if ok:
         return True, msg
-    if sync and sync_reddit_cookies(config):
-        ok, msg, _ = rdt_status()
-        if ok:
-            return True, msg
+    if sync:
+        if which("uv") is None:
+            return False, (
+                f"{msg} | cookie sync needs uv — install uv "
+                "(https://docs.astral.sh/uv/) or: rdt login"
+            )
+        if sync_reddit_cookies(config):
+            ok, msg, _ = rdt_status()
+            if ok:
+                return True, msg
     return False, msg

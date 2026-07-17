@@ -2,6 +2,25 @@
 
 All notable changes to Agent Atlas are documented here.
 
+## [0.1.5] — 2026-07-17
+
+### Added
+- `docs/channels.md` — authoritative doctor/smoke status contract
+- Facebook/Instagram smoke paths; RSS smoke uses `sys.executable`
+- CI: `pytest tests/`, stale-term guard, wheel clean-install gate
+- Publish workflow: tag/version check + dist artifacts
+- Config `ConfigError` for malformed YAML; probe OSError handling
+- `install --safe` is probe-only (no config dir / skill install)
+
+### Changed
+- LinkedIn: mcporter line-token detection; Jina fallback when mcporter broken
+- Removed obsolete `LI_*` / LinkedIn Chrome profile keys and dead OpenCLI helpers
+- Skill references share Capabilities / Prerequisites / Doctor / Commands / Retry / Fallback / Safety
+- Docs: PyPI `agent-atlas-cli` live; PATH checklist; LinkedIn setup checklist
+
+### Removed
+- Unused `requests` dependency; dead `ordered_backends` / Chrome process helpers
+
 ## [0.1.4] — 2026-07-17
 
 ### Added

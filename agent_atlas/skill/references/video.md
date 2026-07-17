@@ -1,19 +1,27 @@
 # Video — YouTube
 
-## Transcripts / subtitles
+## Capabilities
+- Subtitles / auto-captions; title search via yt-dlp
+
+## Prerequisites
+- `yt-dlp` on PATH (`agent-atlas install`)
+
+## Doctor
+- `youtube` → `ok` when yt-dlp present
+
+## Commands
 
 ```bash
 yt-dlp --write-sub --write-auto-sub --skip-download -o "/tmp/%(id)s" "URL"
-```
-
-## Search (titles only)
-
-```bash
 yt-dlp --flat-playlist --print "%(title)s" "ytsearch5:query"
 ```
 
 ## Retry
+1. Missing yt-dlp → install
+2. No subs → `--write-auto-sub`; some videos have none
 
-1. `yt-dlp` missing → `pip install yt-dlp` or `agent-atlas install`
-2. No subs → try `--write-auto-sub`; some videos have none
-3. Geo/age blocks → tell the user; do not invent captions
+## Fallback
+Tell the user — do not invent transcripts.
+
+## Safety
+Skip-download by default; write under `/tmp/`.
