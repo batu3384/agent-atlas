@@ -51,12 +51,12 @@ Install Agent Atlas and Tier 0 upstream tools so the user can search and researc
 Prefer PyPI when the package is published; otherwise install from GitHub.
 
 ```bash
-# Recommended (PyPI)
-uv tool install agent-atlas
+# Recommended (PyPI distribution name: agent-atlas-cli → CLI: agent-atlas)
+uv tool install agent-atlas-cli
 # or
-pipx install agent-atlas
+pipx install agent-atlas-cli
 # or
-pip install agent-atlas
+pip install agent-atlas-cli
 
 # Fallback (git — always works)
 uv tool install git+https://github.com/batu3384/agent-atlas.git
@@ -73,7 +73,7 @@ pip install -e .
 
 Ensure `~/.local/bin` is on `PATH` when using `uv tool` / `pipx`.
 
-**Maintainers — publish a release:** create a GitHub Release; `.github/workflows/publish.yml` uploads to PyPI via Trusted Publishing (configure once on pypi.org).
+**Maintainers — publish a release:** create a GitHub Release; `.github/workflows/publish.yml` uploads to PyPI as **`agent-atlas-cli`** via Trusted Publishing (configure once on pypi.org).
 
 ### Step 2 — Run installer
 
@@ -145,5 +145,5 @@ agent-atlas check-update
 agent-atlas uninstall              # skills + config
 agent-atlas uninstall --keep-config
 agent-atlas uninstall --dry-run
-pipx uninstall agent-atlas         # or: uv tool uninstall agent-atlas
+pipx uninstall agent-atlas-cli         # or: uv tool uninstall agent-atlas-cli
 ```

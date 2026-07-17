@@ -1,5 +1,6 @@
 [project]
-name = "agent-atlas"
+name = "agent-atlas-cli"
+
 version = "0.1.4"
 description = "Search and research the open web for your AI agent."
 readme = "README.md"

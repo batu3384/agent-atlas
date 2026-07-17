@@ -305,7 +305,7 @@ def cmd_uninstall(*, dry_run: bool = False, keep_config: bool = False) -> int:
         else:
             shutil.rmtree(p)
             print(f"Removed: {p}")
-    print("Python package: pip uninstall agent-atlas  (or: uv tool uninstall agent-atlas)")
+    print("Python package: pip uninstall agent-atlas-cli  (or: uv tool uninstall agent-atlas-cli)")
     print("Note: rdt-cli credentials stay in ~/.config/rdt-cli/ (owned by rdt-cli)")
     return 0
 

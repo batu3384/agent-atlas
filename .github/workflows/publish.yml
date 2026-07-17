@@ -1,6 +1,7 @@
 # Publish to PyPI on GitHub Release
 
 # Setup (one-time): PyPI → Publishing → Trusted publishers
+#   PyPI Project Name: agent-atlas-cli
 #   Owner: batu3384  Repo: agent-atlas  Workflow: publish.yml  Environment: pypi
 
 name: publish

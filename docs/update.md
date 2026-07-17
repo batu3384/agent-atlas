@@ -9,11 +9,11 @@ Update Agent Atlas: https://raw.githubusercontent.com/batu3384/agent-atlas/main/
 ## Commands
 
 ```bash
-# PyPI / uv tool
-uv tool upgrade agent-atlas
+# PyPI / uv tool (distribution: agent-atlas-cli)
+uv tool upgrade agent-atlas-cli
 # or
-pipx upgrade agent-atlas
-pip install -U agent-atlas
+pipx upgrade agent-atlas-cli
+pip install -U agent-atlas-cli
 
 # Git fallback
 uv tool install --force git+https://github.com/batu3384/agent-atlas.git

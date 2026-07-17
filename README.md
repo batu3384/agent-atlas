@@ -59,7 +59,7 @@ Install Agent Atlas: https://raw.githubusercontent.com/batu3384/agent-atlas/main
 Or manually:
 
 ```bash
-uv tool install agent-atlas
+uv tool install agent-atlas-cli
 # fallback: uv tool install git+https://github.com/batu3384/agent-atlas.git
 # ensure ~/.local/bin is on PATH
 agent-atlas install

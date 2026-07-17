@@ -4,7 +4,7 @@
 
 ## Quick Start
 
-- Install: `uv tool install agent-atlas` (fallback: git+https://github.com/batu3384/agent-atlas.git)
+- Install: `uv tool install agent-atlas-cli` (CLI binary: `agent-atlas`; fallback: git+https://github.com/batu3384/agent-atlas.git)
 - Agent one-liner: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/install.md
 - Update: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/update.md
 - Troubleshoot: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/troubleshooting.md

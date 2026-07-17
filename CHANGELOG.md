@@ -5,13 +5,13 @@ All notable changes to Agent Atlas are documented here.
 ## [0.1.4] — 2026-07-17
 
 ### Added
-- PyPI packaging metadata + Trusted Publishing workflow (`.github/workflows/publish.yml`)
+- PyPI packaging as **`agent-atlas-cli`** (name `agent-atlas` blocked — too similar to existing `agentatlas`) + Trusted Publishing workflow
 - Modular skill `references/` (web, search, social, career, video, dev)
 - `docs/troubleshooting.md`
 - Turkish summary: `docs/README_tr.md`
 
 ### Changed
-- Install/update docs prefer `uv tool install agent-atlas` with git fallback
+- Install/update docs use `uv tool install agent-atlas-cli` (CLI remains `agent-atlas`) with git fallback
 - Skill install already copies `references/` into agent skill dirs
 
 ## [0.1.3] — 2026-07-17
