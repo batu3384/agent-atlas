@@ -127,7 +127,7 @@ def cmd_install(*, safe: bool = False, dry_run: bool = False, channels: str = ""
     wanted = {c.strip().lower() for c in channels.split(",") if c.strip()}
     want_all = "all" in wanted
     want_opencli = want_all or bool(
-        wanted & {"opencli", "reddit", "facebook", "instagram", "linkedin", "twitter"}
+        wanted & {"opencli", "reddit", "facebook", "instagram", "twitter"}
     )
     want_twitter = want_all or "twitter" in wanted
     want_reddit = want_all or "reddit" in wanted
@@ -196,21 +196,22 @@ def cmd_install(*, safe: bool = False, dry_run: bool = False, channels: str = ""
             note("NEED: uv tool install rdt-cli")
 
     if want_linkedin:
-        repo_li = Path(__file__).resolve().parent.parent / "li-cli"
         if dry_run or safe:
-            note("NEED: uv tool install -e ./li-cli + playwright install chromium")
-        elif _which("li"):
-            note("OK: li-cli")
-        elif _which("uv") and repo_li.is_dir():
-            note("Installing li-cli from repo via uv tool…")
-            r = _run(["uv", "tool", "install", "-e", str(repo_li)])
-            if r.returncode == 0:
-                _run(["uv", "tool", "run", "--from", "playwright", "playwright", "install", "chromium"])
-                note("OK: li-cli — LinkedIn login in Atlas Chrome, then li login (docs/tier1.md)")
-            else:
-                note(f"WARN: li-cli: {(r.stderr or r.stdout or '').strip()}")
+            note(
+                "NEED: uvx linkedin-scraper-mcp@latest --login  "
+                "+ add MCP server to Cursor mcp.json (docs/tier1.md)"
+            )
         else:
-            note("NEED: uv tool install -e ./li-cli (from agent-atlas repo)")
+            note("LinkedIn (Reach-style):")
+            note("  1. uvx linkedin-scraper-mcp@latest --login")
+            note("  2. Add to ~/.cursor/mcp.json:")
+            note('     "linkedin": {"command":"uvx","args":["linkedin-scraper-mcp@latest"]}')
+            note("  3. Public pages: curl -s https://r.jina.ai/https://www.linkedin.com/…")
+            note("  See docs/tier1.md")
+            if _which("uvx"):
+                note("OK: uvx present — run login when ready")
+            else:
+                note("NEED: install uv (https://docs.astral.sh/uv/) for uvx")
 
     if want_opencli or want_twitter:
         note("Manual step: Chrome login (secondary accounts) + opencli doctor")
@@ -296,6 +297,7 @@ def cmd_uninstall(*, dry_run: bool = False, keep_config: bool = False) -> int:
     ]
     if not keep_config:
         paths.append(Path.home() / ".agent-atlas")
+        paths.append(Path.home() / ".config" / "li-cli")
     for p in paths:
         if not p.exists():
             continue
@@ -304,7 +306,8 @@ def cmd_uninstall(*, dry_run: bool = False, keep_config: bool = False) -> int:
         else:
             shutil.rmtree(p)
             print(f"Removed: {p}")
-    print("Python package: pip uninstall agent-atlas")
+    print("Python package: pip uninstall agent-atlas  (or: uv tool uninstall agent-atlas)")
+    print("Note: rdt-cli credentials stay in ~/.config/rdt-cli/ (owned by rdt-cli)")
     return 0
 
 
@@ -327,6 +330,68 @@ def cmd_smoke(as_json: bool = False) -> int:
     return smoke_exit_code(results)
 
 
+def cmd_check_update(*, as_json: bool = False) -> int:
+    from agent_atlas.update_check import check_update, current_version, fetch_latest_version
+
+    code, msg = check_update()
+    if as_json:
+        latest, detail = fetch_latest_version()
+        print(
+            json.dumps(
+                {
+                    "current": current_version(),
+                    "latest": latest,
+                    "detail": detail,
+                    "message": msg,
+                    "update_available": code == 2,
+                },
+                indent=2,
+            )
+        )
+    else:
+        print(msg)
+    return 0 if code != 2 else 2
+
+
+def cmd_watch(*, as_json: bool = False) -> int:
+    """Quick doctor summary + update hint (for scheduled tasks)."""
+    from agent_atlas.doctor import check_all
+    from agent_atlas.update_check import check_update
+
+    results = check_all(Config())
+    ok = sum(1 for r in results.values() if r["status"] == "ok")
+    warn = sum(1 for r in results.values() if r["status"] == "warn")
+    off = sum(1 for r in results.values() if r["status"] in ("off", "error"))
+    upd_code, upd_msg = check_update()
+
+    if as_json:
+        print(
+            json.dumps(
+                {
+                    "ok": ok,
+                    "warn": warn,
+                    "off": off,
+                    "channels": {
+                        k: {"status": v["status"], "active_backend": v.get("active_backend")}
+                        for k, v in results.items()
+                    },
+                    "update": {"code": upd_code, "message": upd_msg},
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+    else:
+        print(f"Agent Atlas watch — ready={ok} warn={warn} off={off}")
+        for name, r in results.items():
+            if r["status"] == "ok":
+                continue
+            mark = {"warn": "!", "off": "X", "error": "E"}.get(r["status"], "?")
+            print(f"  [{mark}] {name}: {r['message'][:90]}")
+        print(upd_msg)
+    return 1 if warn or (upd_code == 2) else 0
+
+
 def main(argv: list[str] | None = None) -> None:
     from agent_atlas.config import apply_runtime_env
 
@@ -345,6 +410,12 @@ def main(argv: list[str] | None = None) -> None:
 
     p_smoke = sub.add_parser("smoke", help="One real research call per ready channel")
     p_smoke.add_argument("--json", action="store_true")
+
+    p_watch = sub.add_parser("watch", help="Quick health + update check")
+    p_watch.add_argument("--json", action="store_true")
+
+    p_upd = sub.add_parser("check-update", help="Check GitHub for newer version")
+    p_upd.add_argument("--json", action="store_true")
 
     p_inst = sub.add_parser("install", help="Install upstream tools + skill")
     p_inst.add_argument("--safe", action="store_true")
@@ -377,6 +448,10 @@ def main(argv: list[str] | None = None) -> None:
         code = cmd_doctor(as_json=args.json)
     elif args.command == "smoke":
         code = cmd_smoke(as_json=args.json)
+    elif args.command == "watch":
+        code = cmd_watch(as_json=args.json)
+    elif args.command == "check-update":
+        code = cmd_check_update(as_json=args.json)
     elif args.command == "install":
         code = cmd_install(safe=args.safe, dry_run=args.dry_run, channels=args.channels)
     elif args.command == "configure":

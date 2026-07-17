@@ -122,31 +122,23 @@ def _smoke_reddit(backend: Optional[str] = None) -> SmokeResult:
 
 
 def _smoke_linkedin(backend: Optional[str] = None) -> SmokeResult:
-    # Prefer doctor's active_backend; OpenCLI is the reliable LinkedIn path
-    if backend != "li-cli":
-        ok, detail = _run(
-            ["opencli", "linkedin", "people-search", "github", "-f", "yaml"],
-            timeout=60,
+    """Reach-style: MCP is exercised by the agent host; Jina probed via HTTP."""
+    from agent_atlas.linkedin_mcp import linkedin_mcp_configured
+    from agent_atlas.probe import http_ok
+
+    if backend == "linkedin-mcp" or linkedin_mcp_configured():
+        return SmokeResult(
+            "linkedin",
+            "pass",
+            "linkedin-mcp configured — use agent MCP tools (search_people, …)",
         )
-        if ok and "profile_url:" in detail:
-            return SmokeResult("linkedin", "pass", detail)
-        opencli_fail = detail
-    else:
-        opencli_fail = ""
-
-    from agent_atlas.li_status import li_status
-
-    ok_li, _, _ = li_status(use_cache=False)
-    if ok_li or backend == "li-cli":
-        ok2, detail2 = _run(
-            ["li", "people-search", "github", "-n", "3", "--yaml"],
-            timeout=90,
+    if http_ok("https://r.jina.ai/https://www.linkedin.com", timeout=15):
+        return SmokeResult(
+            "linkedin",
+            "pass",
+            "Jina public page OK — curl -s https://r.jina.ai/https://www.linkedin.com/…",
         )
-        if ok2 and "profile_url:" in detail2:
-            return SmokeResult("linkedin", "pass", detail2)
-        return SmokeResult("linkedin", "fail", (detail2 or opencli_fail)[:160])
-
-    return SmokeResult("linkedin", "fail", (opencli_fail or "linkedin smoke failed")[:160])
+    return SmokeResult("linkedin", "fail", "LinkedIn smoke: configure linkedin-mcp or check Jina")
 
 
 _SMOKES: dict[str, Callable[..., SmokeResult]] = {
@@ -176,8 +168,8 @@ def run_smoke(config: Config | None = None) -> List[SmokeResult]:
         if status == "off":
             results.append(SmokeResult(name, "skip", "disabled / not installed"))
             continue
-        if status == "ok":
-            # Tier-1 smokes accept optional backend; Tier-0 take no args
+        if status == "ok" or (status == "warn" and name == "linkedin"):
+            # LinkedIn is warn when MCP/Jina ready (session lives in MCP host)
             if name in ("twitter", "reddit", "linkedin"):
                 results.append(fn(backend))
             else:

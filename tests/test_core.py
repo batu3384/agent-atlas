@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -135,28 +136,99 @@ def test_apply_runtime_env_reddit_profile(tmp_config: Config) -> None:
     assert applied["REDDIT_CHROME_PROFILE"] == "Profile 3"
 
 
-def test_linkedin_prefers_opencli_when_bridge_ok(monkeypatch) -> None:
+def test_linkedin_uses_mcp_when_configured(monkeypatch) -> None:
     from agent_atlas.channels.social import LinkedInChannel
 
     ch = LinkedInChannel()
     monkeypatch.setattr(
-        "agent_atlas.channels.social.opencli_installed", lambda: True
+        "agent_atlas.linkedin_mcp.linkedin_mcp_configured", lambda: True
     )
     monkeypatch.setattr(
-        "agent_atlas.channels.social.opencli_has_adapter", lambda n: n == "linkedin"
+        "agent_atlas.linkedin_mcp.linkedin_mcp_status",
+        lambda: (
+            "warn",
+            "linkedin-mcp ready — use MCP tools",
+            {"configured": True, "uvx": True},
+        ),
     )
-    monkeypatch.setattr(
-        "agent_atlas.channels.social.opencli_doctor",
-        lambda: ("ok", "bridge ready", None),
-    )
-    monkeypatch.setattr(
-        "agent_atlas.li_status.li_installed", lambda: True
-    )
-    # ensure_li_session must not be required when OpenCLI wins
     status, msg = ch.check()
-    assert status == "ok"
-    assert ch.active_backend == "OpenCLI"
-    assert "opencli linkedin" in msg
+    assert status == "warn"
+    assert ch.active_backend == "linkedin-mcp"
+    assert "linkedin-mcp" in msg
+
+
+def test_linkedin_falls_back_to_jina(monkeypatch) -> None:
+    from agent_atlas.channels.social import LinkedInChannel
+
+    ch = LinkedInChannel()
+    monkeypatch.setattr(
+        "agent_atlas.linkedin_mcp.linkedin_mcp_configured", lambda: False
+    )
+    monkeypatch.setattr(
+        "agent_atlas.linkedin_mcp.linkedin_mcp_status",
+        lambda: ("off", "LinkedIn MCP not configured", {"configured": False}),
+    )
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.http_ok", lambda *a, **k: True
+    )
+    status, msg = ch.check()
+    assert status == "warn"
+    assert ch.active_backend == "Jina Reader"
+    assert "jina" in msg.lower()
+
+
+def test_linkedin_mcp_config_detection(tmp_path, monkeypatch) -> None:
+    from agent_atlas import linkedin_mcp as lm
+
+    cfg = tmp_path / "mcp.json"
+    cfg.write_text(
+        json.dumps(
+            {
+                "mcpServers": {
+                    "linkedin": {
+                        "command": "uvx",
+                        "args": ["linkedin-scraper-mcp@latest"],
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(lm, "_mcp_config_paths", lambda: [cfg])
+    assert lm.linkedin_mcp_configured() is True
+
+    empty = tmp_path / "empty.json"
+    empty.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(lm, "_mcp_config_paths", lambda: [empty])
+    assert lm.linkedin_mcp_configured() is False
+
+
+def test_linkedin_off_without_mcp_or_jina(monkeypatch) -> None:
+    from agent_atlas.channels.social import LinkedInChannel
+
+    ch = LinkedInChannel()
+    monkeypatch.setattr(
+        "agent_atlas.linkedin_mcp.linkedin_mcp_configured", lambda: False
+    )
+    monkeypatch.setattr(
+        "agent_atlas.linkedin_mcp.linkedin_mcp_status",
+        lambda: ("off", "LinkedIn MCP not configured — login hint", None),
+    )
+    monkeypatch.setattr(
+        "agent_atlas.channels.social.http_ok", lambda *a, **k: False
+    )
+    status, msg = ch.check()
+    assert status == "off"
+    assert ch.active_backend is None
+    assert "LinkedIn" in msg
+
+
+def test_compare_versions() -> None:
+    from agent_atlas.update_check import compare_versions
+
+    assert compare_versions("0.1.0", "0.2.0") == "newer"
+    assert compare_versions("0.1.0", "0.1.0") == "same"
+    assert compare_versions("0.2.0", "0.1.0") == "older"
 
 
 def test_twitter_falls_back_to_opencli_when_unauth(monkeypatch) -> None:

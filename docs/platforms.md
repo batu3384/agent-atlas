@@ -22,7 +22,7 @@ Full setup: [tier1.md](tier1.md)
 | **reddit** | rdt-cli → OpenCLI | `rdt search "q" -n 10` · `opencli reddit search "q" -f yaml` |
 | **facebook** | OpenCLI | `opencli facebook search "q" -f yaml` |
 | **instagram** | OpenCLI | `opencli instagram search "q" -f yaml` |
-| **linkedin** | OpenCLI → li-cli (exp.) → Jina | `opencli linkedin people-search "q" -f yaml` |
+| **linkedin** | linkedin-mcp → Jina | MCP tools / `curl -s "https://r.jina.ai/https://www.linkedin.com/…"` |
 
 Doctor statuses: `ok` = session ready · `warn` = installed, login needed · `off` = not installed.
 

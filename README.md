@@ -36,15 +36,15 @@ Agent Atlas is a **capability layer**: it installs, health-checks, and routes fr
 
 ### Tier 1 — login / session
 
-| Channel | Backend order | Chrome closed? | Notes |
-|---------|---------------|----------------|-------|
-| **twitter** | [twitter-cli](https://github.com/public-clis/twitter-cli) → [OpenCLI](https://github.com/jackwener/opencli) | Yes (twitter-cli) | Tokens / cookies |
-| **reddit** | [rdt-cli](https://pypi.org/project/rdt-cli/) → OpenCLI | Yes (rdt-cli) | Cookies from Atlas Chrome profile on doctor |
-| **linkedin** | OpenCLI → `li-cli` (experimental) → Jina | **No** for reliable use | LinkedIn blocks headless cookie replay; keep Chrome + bridge + feed open |
-| **facebook** | OpenCLI | No | Often disabled via `disabled_channels` |
-| **instagram** | OpenCLI | No | Often disabled via `disabled_channels` |
+| Channel | Backend order | Notes |
+|---------|---------------|-------|
+| **twitter** | [twitter-cli](https://github.com/public-clis/twitter-cli) → [OpenCLI](https://github.com/jackwener/opencli) | Tokens / cookies |
+| **reddit** | [rdt-cli](https://pypi.org/project/rdt-cli/) → OpenCLI | Cookies from Atlas Chrome profile on doctor |
+| **linkedin** | [linkedin-scraper-mcp](https://github.com/stickerdaniel/linkedin-mcp-server) → Jina | Reach-style: `uvx … --login` + MCP config |
+| **facebook** | OpenCLI | Often disabled via `disabled_channels` |
+| **instagram** | OpenCLI | Often disabled via `disabled_channels` |
 
-Bundled experimental package: [`li-cli/`](li-cli/) — LinkedIn cookie sync + headless Chromium. Prefer OpenCLI for production research.
+The `li-cli/` directory is an orphaned experimental package — **not** used by Atlas LinkedIn routing.
 
 Full command examples: [docs/platforms.md](docs/platforms.md) · Tier 1 setup: [docs/tier1.md](docs/tier1.md)
 
@@ -55,21 +55,28 @@ Full command examples: [docs/platforms.md](docs/platforms.md) · Tier 1 setup: [
 Tell your AI agent:
 
 ```
-Install Agent Atlas using docs/install.md in this repo.
+Install Agent Atlas: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/install.md
 ```
 
 Or manually:
+
+```bash
+uv tool install git+https://github.com/batu3384/agent-atlas.git
+# ensure ~/.local/bin is on PATH
+agent-atlas install
+agent-atlas doctor
+agent-atlas smoke
+```
+
+From a clone:
 
 ```bash
 git clone https://github.com/batu3384/agent-atlas.git
 cd agent-atlas
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
-# or: uv tool install -e .   # puts agent-atlas on ~/.local/bin
-
 agent-atlas install
 agent-atlas doctor
-agent-atlas smoke
 ```
 
 Tier 1 (optional):
@@ -91,6 +98,8 @@ agent-atlas doctor          # human report
 agent-atlas doctor --json   # for agents — use active_backend per channel
 agent-atlas smoke           # one real call per ready channel
 agent-atlas smoke --json
+agent-atlas watch           # quick health + update hint
+agent-atlas check-update
 agent-atlas install         # Tier 0 + SKILL.md
 agent-atlas install --channels twitter,reddit,linkedin,opencli,all
 agent-atlas install --safe  # print needs only
@@ -114,7 +123,8 @@ python3 -c "import feedparser; print([e.title for e in feedparser.parse('https:/
 # Tier 1
 twitter search "AI agents" -n 10
 rdt search "AI agents" -n 10 --compact --yaml
-opencli linkedin people-search "AI agents" -f yaml
+# LinkedIn: agent MCP tools after `uvx linkedin-scraper-mcp@latest --login`
+curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
 ```
 
 ---
@@ -134,12 +144,15 @@ opencli linkedin people-search "AI agents" -f yaml
 | Doc | Contents |
 |-----|----------|
 | [docs/install.md](docs/install.md) | Install for agents & humans |
-| [docs/tier1.md](docs/tier1.md) | Twitter / Reddit / LinkedIn / OpenCLI |
+| [docs/tier1.md](docs/tier1.md) | Twitter / Reddit / LinkedIn / OpenCLI / MCP |
 | [docs/platforms.md](docs/platforms.md) | Backend order + examples |
 | [docs/update.md](docs/update.md) | Update path |
+| [CHANGELOG.md](CHANGELOG.md) | Release notes |
+| [SECURITY.md](SECURITY.md) | Credentials & reporting |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup / PR guide |
 | [SKILL.md](SKILL.md) | Agent skill (routing rules) |
 | [PLAN.md](PLAN.md) | Project plan / status |
-| [li-cli/README.md](li-cli/README.md) | Experimental LinkedIn CLI |
+| [li-cli/README.md](li-cli/README.md) | Orphaned experimental LinkedIn CLI (not routed) |
 
 ---
 
@@ -149,4 +162,4 @@ MIT — see [LICENSE](LICENSE). Upstream tools keep their own licenses.
 
 ## Credits (upstream)
 
-[Jina Reader](https://github.com/jina-ai/reader) · [Exa](https://exa.ai) · [mcporter](https://github.com/nicobailon/mcporter) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [GitHub CLI](https://cli.github.com) · [feedparser](https://github.com/kurtmckee/feedparser) · [OpenCLI](https://github.com/jackwener/opencli) · [twitter-cli](https://github.com/public-clis/twitter-cli) · [rdt-cli](https://pypi.org/project/rdt-cli/) · li-cli (this repo)
+[Jina Reader](https://github.com/jina-ai/reader) · [Exa](https://exa.ai) · [mcporter](https://github.com/nicobailon/mcporter) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [GitHub CLI](https://cli.github.com) · [feedparser](https://github.com/kurtmckee/feedparser) · [OpenCLI](https://github.com/jackwener/opencli) · [twitter-cli](https://github.com/public-clis/twitter-cli) · [rdt-cli](https://pypi.org/project/rdt-cli/) · [linkedin-scraper-mcp](https://github.com/stickerdaniel/linkedin-mcp-server)

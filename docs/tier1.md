@@ -16,7 +16,7 @@ Agent Atlas does not scrape these itself — it routes to **OpenCLI** and/or **t
 
 ## Recommended path: OpenCLI (desktop)
 
-Covers: **Reddit, Facebook, Instagram, Twitter (fallback), LinkedIn (if adapter present)**.
+Covers: **Reddit, Facebook, Instagram, Twitter (fallback)**. Not used for LinkedIn (see LinkedIn section).
 
 ### 1. Install CLI
 
@@ -44,7 +44,7 @@ opencli doctor
 ```bash
 agent-atlas install --channels opencli
 # or individually:
-agent-atlas install --channels twitter,reddit,facebook,instagram,linkedin
+agent-atlas install --channels twitter,reddit,facebook,instagram
 ```
 
 ### 4. Example commands
@@ -123,38 +123,52 @@ opencli reddit search "query" -f yaml
 
 ---
 
-## LinkedIn — OpenCLI (preferred)
+## LinkedIn — linkedin-mcp → Jina (Reach-style)
 
-LinkedIn **rejects headless cookie replay**. Practical path: Chrome open + OpenCLI bridge + signed-in feed.
+Same stack as [Agent Reach](https://github.com/Panniantong/Agent-Reach): authenticated research via [linkedin-scraper-mcp](https://github.com/stickerdaniel/linkedin-mcp-server); public pages via Jina.
 
-```bash
-# Atlas Chrome open, OpenCLI extension connected, linkedin.com feed visible
-opencli linkedin people-search "query" -f yaml
-```
-
-Config:
-
-```yaml
-opencli_profile: atlas
-twitter_chrome_profile: Profile 3   # Atlas Chrome profile
-```
-
-### Experimental: li-cli (Chrome closed)
-
-`li-cli` can sync cookies from Profile 3, but LinkedIn usually invalidates the session in headless Chromium. Prefer OpenCLI.
+### 1. Login (once)
 
 ```bash
-uv tool install -e ./li-cli
-# Chrome closed, after a real linkedin.com login in Atlas profile:
-li login --force
-li people-search "github" -n 5 --yaml
+uvx linkedin-scraper-mcp@latest --login
 ```
 
-### Public pages
+A browser window opens — sign in with a **secondary** LinkedIn account. Session is stored under `~/.linkedin-mcp/`.
 
-| Mode | How |
-|------|-----|
-| Public page read | `curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"` |
+### 2. Register MCP
+
+Cursor `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "linkedin": {
+      "command": "uvx",
+      "args": ["linkedin-scraper-mcp@latest"],
+      "env": { "UV_HTTP_TIMEOUT": "300" }
+    }
+  }
+}
+```
+
+Optional (Reach/mcporter HTTP):
+
+```bash
+uvx linkedin-scraper-mcp@latest --transport streamable-http --port 8001
+mcporter config add linkedin http://localhost:8001/mcp
+```
+
+### 3. Use
+
+From the agent: MCP tools (`search_people`, `get_person_profile`, `search_jobs`, …).
+
+Public page (no login):
+
+```bash
+curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
+```
+
+`agent-atlas doctor` shows `linkedin-mcp` as **warn** when MCP config is present (session lives in the MCP host). Without MCP, doctor falls back to **Jina Reader** for public pages.
 
 ---
 

@@ -1,16 +1,38 @@
 # Update Agent Atlas
 
-```bash
-cd /path/to/agent-atlas
-git pull   # if using git
-source ~/.agent-atlas-venv/bin/activate   # if using venv
-pip install -e .
-agent-atlas skill --install
-agent-atlas doctor
-```
-
 Tell your agent:
 
 ```
-Update Agent Atlas using docs/update.md
+Update Agent Atlas: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/update.md
+```
+
+## Commands
+
+```bash
+# If installed via git clone + editable pip
+cd /path/to/agent-atlas
+git pull
+pip install -e .
+agent-atlas skill --install
+
+# If installed via uv tool
+uv tool upgrade agent-atlas
+# or reinstall:
+uv tool install --force git+https://github.com/batu3384/agent-atlas.git
+
+# If installed via pipx
+pipx upgrade agent-atlas
+# or:
+pipx install --force git+https://github.com/batu3384/agent-atlas.git
+
+agent-atlas doctor
+agent-atlas check-update
+agent-atlas smoke
+```
+
+## What to verify
+
+```bash
+agent-atlas doctor --json   # each channel active_backend
+agent-atlas watch           # health + newer-version hint
 ```

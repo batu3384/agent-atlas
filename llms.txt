@@ -1,34 +1,34 @@
 # Agent Atlas
 
-> Search and research the open web for your AI agent. Agent Atlas installs, health-checks, and routes free upstream tools across 10 Western channels. It is not a scraper — after install, agents call upstream CLIs directly (Jina, Exa/mcporter, yt-dlp, gh, twitter-cli, OpenCLI, feedparser).
+> Search and research the open web for your AI agent. Agent Atlas installs, health-checks, and routes free upstream tools across 10 Western channels. It is not a scraper — after install, agents call upstream CLIs directly (Jina, Exa/mcporter, yt-dlp, gh, twitter-cli, rdt-cli, OpenCLI, feedparser).
 
 ## Quick Start
 
-- [Installation Guide](https://github.com/batu3384/agent-atlas/blob/main/docs/install.md): Step-by-step setup for AI agents and humans
-- [README](https://github.com/batu3384/agent-atlas/blob/main/README.md): Product overview
-- [Tier 1 login channels](https://github.com/batu3384/agent-atlas/blob/main/docs/tier1.md): Twitter, Reddit, LinkedIn, OpenCLI bridge
+- Install (one line for agents): https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/install.md
+- Update: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/update.md
+- [README](https://github.com/batu3384/agent-atlas/blob/main/README.md)
+- [Tier 1](https://github.com/batu3384/agent-atlas/blob/main/docs/tier1.md)
 
 ## Core Commands
 
-- `agent-atlas doctor --json` — which channels are ready and which backend is active
+- `agent-atlas doctor --json` — channel status + `active_backend`
 - `agent-atlas smoke` — one real research call per ready channel
-- `agent-atlas install` — install Tier 0 tools + register SKILL.md
-- Agents then call upstream tools directly (see platforms.md)
+- `agent-atlas watch` — quick health + update hint
+- `agent-atlas check-update`
+- `agent-atlas install` / `install --channels twitter,reddit,linkedin,opencli`
 
 ## Key Features
 
-- Read any URL via Jina Reader
-- Web search via Exa (mcporter MCP, free hosted endpoint)
-- YouTube transcripts via yt-dlp
-- GitHub search/view via `gh`
-- RSS via feedparser
-- Twitter/X via twitter-cli (Chrome profile cookies) or OpenCLI
-- Reddit / LinkedIn via OpenCLI (+ LinkedIn public pages via Jina)
-- Facebook / Instagram supported but optional (`disabled_channels`)
-- Self-diagnosis + research smoke tests
-- Zero China-only platforms by design (no Bilibili / Xiaohongshu / etc.)
+- Web (Jina), Exa search, YouTube (yt-dlp), GitHub (gh), RSS (feedparser)
+- Twitter: twitter-cli → OpenCLI
+- Reddit: rdt-cli (Chrome closed) → OpenCLI
+- LinkedIn: linkedin-mcp → Jina (Reach-style; `uvx linkedin-scraper-mcp@latest --login`)
+- Facebook / Instagram: OpenCLI (often `disabled_channels`)
+- Config → runtime env; cookie sync from Atlas Chrome profile
+- Western-only by design (no Bilibili / Xiaohongshu / etc.)
 
 ## Optional
 
-- [SKILL.md](https://github.com/batu3384/agent-atlas/blob/main/SKILL.md): Integration guide for Cursor / Claude Code / agentskills.io
-- [Platforms](https://github.com/batu3384/agent-atlas/blob/main/docs/platforms.md): Backend routing table
+- [SKILL.md](https://github.com/batu3384/agent-atlas/blob/main/SKILL.md)
+- [Platforms](https://github.com/batu3384/agent-atlas/blob/main/docs/platforms.md)
+- [li-cli](https://github.com/batu3384/agent-atlas/blob/main/li-cli/README.md) (experimental)

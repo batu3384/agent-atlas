@@ -52,11 +52,12 @@ python -c "import feedparser; print(feedparser.parse('FEED_URL').entries[:5])"
 ## Login channels (Tier 1)
 
 This install disables **Facebook** and **Instagram** (`disabled_channels`).
-**Twitter** → twitter-cli (cookie/token). **Reddit** → rdt-cli (Chrome closed OK).
-**LinkedIn** → OpenCLI (Chrome open + bridge + linkedin.com feed). Headless `li-cli` is experimental — LinkedIn rejects cookie replay.
+**Twitter** → twitter-cli (cookie/token). **Reddit** → rdt-cli.
+**LinkedIn** → linkedin-scraper-mcp (Reach-style) → Jina public pages.
+`uvx linkedin-scraper-mcp@latest --login` then MCP config — see `docs/tier1.md`.
 
-`agent-atlas` reads `~/.agent-atlas/config.yaml` into env (`TWITTER_*`, `LI_*`, `OPENCLI_PROFILE`).
-Reddit/LinkedIn cookie sync uses `twitter_chrome_profile` (or per-channel override) on doctor.
+`agent-atlas` reads `~/.agent-atlas/config.yaml` into env (`TWITTER_*`, `OPENCLI_PROFILE`).
+Reddit cookie sync uses `twitter_chrome_profile` (or per-channel override) on doctor.
 
 ```bash
 agent-atlas configure twitter_chrome_profile "Profile 3"
@@ -66,7 +67,8 @@ agent-atlas configure opencli_profile atlas
 ```bash
 twitter search "query" -n 10
 rdt search "query" -n 10 --compact --yaml
-opencli linkedin people-search "query" -f yaml
+# LinkedIn: use agent MCP tools after linkedin-scraper-mcp login
+curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
 ```
 
 Do **not** use Facebook/Instagram adapters unless the user re-enables them.
@@ -74,7 +76,9 @@ Do **not** use Facebook/Instagram adapters unless the user re-enables them.
 ## Install / update
 
 ```
-Install: docs/install.md · Tier 1: docs/tier1.md · Update: docs/update.md
+Install: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/install.md
+Update: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/update.md
+Local: docs/install.md · docs/tier1.md · docs/update.md
 ```
 
 ## Platform details

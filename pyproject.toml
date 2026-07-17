@@ -1,6 +1,6 @@
 [project]
 name = "agent-atlas"
-version = "0.1.0"
+version = "0.1.2"
 description = "Search and research the open web for your AI agent."
 readme = "README.md"
 license = {text = "MIT"}

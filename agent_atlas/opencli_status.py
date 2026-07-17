@@ -95,5 +95,13 @@ def opencli_has_adapter(name: str) -> bool:
     """Best-effort: opencli list mentions adapter name (uses cached list)."""
     out = _opencli_list_output()
     if not out:
-        return False
+        # If list failed/empty but doctor is ok, assume common adapters exist
+        st, _, _ = opencli_doctor()
+        return st == "ok" and name.lower() in {
+            "linkedin",
+            "reddit",
+            "twitter",
+            "facebook",
+            "instagram",
+        }
     return bool(re.search(rf"\b{re.escape(name)}\b", out, re.I))

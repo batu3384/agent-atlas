@@ -4,7 +4,11 @@
 from urllib.parse import urlparse
 
 from agent_atlas.channels.base import Channel
-from agent_atlas.opencli_status import opencli_doctor, opencli_has_adapter, opencli_installed
+from agent_atlas.opencli_status import (
+    opencli_doctor,
+    opencli_has_adapter,
+    opencli_installed,
+)
 from agent_atlas.probe import http_ok, probe_command, which
 
 
@@ -135,48 +139,27 @@ class InstagramChannel(Channel):
 class LinkedInChannel(Channel):
     name = "linkedin"
     description = "LinkedIn"
-    backends = ["OpenCLI", "li-cli", "Jina Reader"]
+    backends = ["linkedin-mcp", "Jina Reader"]
     tier = 1
 
     def can_handle(self, url: str) -> bool:
         return "linkedin.com" in urlparse(url).netloc.lower()
 
     def check(self, config=None):
-        from agent_atlas.config import Config as Cfg
-        from agent_atlas.li_status import ensure_li_session, li_installed
+        from agent_atlas.linkedin_mcp import linkedin_mcp_configured, linkedin_mcp_status
 
-        config = config or Cfg()
-
-        # LinkedIn blocks headless cookie replay — prefer OpenCLI when bridge is up
-        if opencli_installed() and opencli_has_adapter("linkedin"):
-            st, msg, _ = opencli_doctor()
-            if st == "ok":
-                self.active_backend = "OpenCLI"
-                return "ok", 'OpenCLI ready — opencli linkedin people-search "q" -f yaml'
-            opencli_warn = msg
-        else:
-            opencli_warn = None
-
-        if li_installed():
-            ok, msg = ensure_li_session(config)
-            if ok:
-                self.active_backend = "li-cli"
-                return "ok", msg
-            if opencli_warn:
-                self.active_backend = "OpenCLI"
-                return "warn", f"{msg}; OpenCLI — {opencli_warn}"
-            self.active_backend = "li-cli"
-            return "warn", msg
-
-        if opencli_warn is not None:
-            self.active_backend = "OpenCLI"
-            return "warn", f"OpenCLI LinkedIn — {opencli_warn}"
+        # Reach-style: linkedin-scraper-mcp for auth research; Jina for public pages
+        mcp_st, mcp_msg, _ = linkedin_mcp_status()
+        if linkedin_mcp_configured():
+            self.active_backend = "linkedin-mcp"
+            return mcp_st if mcp_st != "off" else "warn", mcp_msg
 
         if http_ok("https://r.jina.ai/", timeout=8):
             self.active_backend = "Jina Reader"
             return (
                 "warn",
-                "Public pages via Jina — curl -s https://r.jina.ai/https://www.linkedin.com/…",
+                "Public LinkedIn via Jina — curl -s https://r.jina.ai/https://www.linkedin.com/… "
+                f"| Full access: {mcp_msg}",
             )
         self.active_backend = None
-        return "off", "LinkedIn: OpenCLI bridge + linkedin.com login — docs/tier1.md"
+        return "off", f"LinkedIn: {mcp_msg}"
