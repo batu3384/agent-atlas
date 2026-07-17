@@ -4,7 +4,7 @@
 
 Agent Atlas is a **capability layer**: it installs, health-checks, and routes free upstream tools so your AI coding agent can research the web. It is **not** a scraper framework — after setup, the agent calls upstream CLIs/APIs directly.
 
-**10 Western channels.** No China-only platforms. English-first docs.
+**10 Western channels.** No China-only platforms. English-first docs · [Türkçe](docs/README_tr.md).
 
 > Not the same as other GitHub projects named “AgentAtlas” (e.g. browser schema registries). This repo is an **open-web research installer + router** for AI coding agents.
 
@@ -40,11 +40,9 @@ Agent Atlas is a **capability layer**: it installs, health-checks, and routes fr
 |---------|---------------|-------|
 | **twitter** | [twitter-cli](https://github.com/public-clis/twitter-cli) → [OpenCLI](https://github.com/jackwener/opencli) | Tokens / cookies |
 | **reddit** | [rdt-cli](https://pypi.org/project/rdt-cli/) → OpenCLI | Cookies from Atlas Chrome profile on doctor |
-| **linkedin** | [linkedin-scraper-mcp](https://github.com/stickerdaniel/linkedin-mcp-server) → Jina | Reach-style: `uvx … --login` + MCP config |
+| **linkedin** | [linkedin-scraper-mcp](https://github.com/stickerdaniel/linkedin-mcp-server) → Jina | Reach-style: `uvx … --login` + MCP / mcporter |
 | **facebook** | OpenCLI | Often disabled via `disabled_channels` |
 | **instagram** | OpenCLI | Often disabled via `disabled_channels` |
-
-The `li-cli/` directory is an orphaned experimental package — **not** used by Atlas LinkedIn routing.
 
 Full command examples: [docs/platforms.md](docs/platforms.md) · Tier 1 setup: [docs/tier1.md](docs/tier1.md)
 
@@ -61,7 +59,8 @@ Install Agent Atlas: https://raw.githubusercontent.com/batu3384/agent-atlas/main
 Or manually:
 
 ```bash
-uv tool install git+https://github.com/batu3384/agent-atlas.git
+uv tool install agent-atlas
+# fallback: uv tool install git+https://github.com/batu3384/agent-atlas.git
 # ensure ~/.local/bin is on PATH
 agent-atlas install
 agent-atlas doctor
@@ -145,14 +144,15 @@ curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
 |-----|----------|
 | [docs/install.md](docs/install.md) | Install for agents & humans |
 | [docs/tier1.md](docs/tier1.md) | Twitter / Reddit / LinkedIn / OpenCLI / MCP |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Common failures & fixes |
 | [docs/platforms.md](docs/platforms.md) | Backend order + examples |
 | [docs/update.md](docs/update.md) | Update path |
+| [docs/README_tr.md](docs/README_tr.md) | Türkçe özet |
 | [CHANGELOG.md](CHANGELOG.md) | Release notes |
 | [SECURITY.md](SECURITY.md) | Credentials & reporting |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup / PR guide |
 | [SKILL.md](SKILL.md) | Agent skill (routing rules) |
 | [PLAN.md](PLAN.md) | Project plan / status |
-| [li-cli/README.md](li-cli/README.md) | Orphaned experimental LinkedIn CLI (not routed) |
 
 ---
 

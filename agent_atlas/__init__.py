@@ -1,4 +1,4 @@
-"""Agent Atlas — search and research the open web for your AI agent."""
+# -*- coding: utf-8 -*-
+"""Agent Atlas package."""
 
-__version__ = "0.1.2"
-
+__version__ = "0.1.4"

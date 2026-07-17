@@ -28,59 +28,34 @@ Installer + doctor + routing. **You call upstream tools directly** after checkin
 3. Say which channel/backend you are using.
 4. Temp files → `/tmp/`. Config → `~/.agent-atlas/`. Do not pollute the project workspace.
 5. Prefer Tier 0 tools first; ask before installing Tier 1 login tools.
+6. On failure, follow retry chains in `references/` — do not invent scrapers.
+7. After substantial multi-platform work, run `agent-atlas check-update` once.
 
-## Zero-config commands
+## Routing table
+
+| User intent | Category | Details |
+|-------------|----------|---------|
+| Web pages / articles / RSS | web | [references/web.md](references/web.md) |
+| Web / semantic search (Exa) | search | [references/search.md](references/search.md) |
+| Twitter / Reddit / Facebook / Instagram | social | [references/social.md](references/social.md) |
+| LinkedIn / jobs | career | [references/career.md](references/career.md) |
+| GitHub / code | dev | [references/dev.md](references/dev.md) |
+| YouTube transcripts | video | [references/video.md](references/video.md) |
+
+## Zero-config quick commands
 
 ```bash
-# Web page → clean markdown
 curl -s "https://r.jina.ai/URL"
-
-# Web search (Exa via mcporter)
 mcporter call 'exa.web_search_exa(query: "query", numResults: 5)'
-
-# GitHub
 gh search repos "query" --sort stars --limit 10
-gh repo view owner/repo
-
-# YouTube subtitles
 yt-dlp --write-sub --write-auto-sub --skip-download -o "/tmp/%(id)s" "URL"
-
-# RSS (Python)
 python -c "import feedparser; print(feedparser.parse('FEED_URL').entries[:5])"
 ```
-
-## Login channels (Tier 1)
-
-This install disables **Facebook** and **Instagram** (`disabled_channels`).
-**Twitter** → twitter-cli (cookie/token). **Reddit** → rdt-cli.
-**LinkedIn** → linkedin-scraper-mcp (Reach-style) → Jina public pages.
-`uvx linkedin-scraper-mcp@latest --login` then MCP config — see `docs/tier1.md`.
-
-`agent-atlas` reads `~/.agent-atlas/config.yaml` into env (`TWITTER_*`, `OPENCLI_PROFILE`).
-Reddit cookie sync uses `twitter_chrome_profile` (or per-channel override) on doctor.
-
-```bash
-agent-atlas configure twitter_chrome_profile "Profile 3"
-agent-atlas configure opencli_profile atlas
-```
-
-```bash
-twitter search "query" -n 10
-rdt search "query" -n 10 --compact --yaml
-# LinkedIn: use agent MCP tools after linkedin-scraper-mcp login
-curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
-```
-
-Do **not** use Facebook/Instagram adapters unless the user re-enables them.
 
 ## Install / update
 
 ```
 Install: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/install.md
 Update: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/update.md
-Local: docs/install.md · docs/tier1.md · docs/update.md
+Troubleshoot: docs/troubleshooting.md
 ```
-
-## Platform details
-
-See `docs/platforms.md` after skill sync.

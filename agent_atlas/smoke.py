@@ -122,7 +122,7 @@ def _smoke_reddit(backend: Optional[str] = None) -> SmokeResult:
 
 
 def _smoke_linkedin(backend: Optional[str] = None) -> SmokeResult:
-    """Reach-style: MCP is exercised by the agent host; Jina probed via HTTP."""
+    """Reach-style: MCP configured ⇒ pass; else probe Jina public page."""
     from agent_atlas.linkedin_mcp import linkedin_mcp_configured
     from agent_atlas.probe import http_ok
 
@@ -130,7 +130,7 @@ def _smoke_linkedin(backend: Optional[str] = None) -> SmokeResult:
         return SmokeResult(
             "linkedin",
             "pass",
-            "linkedin-mcp configured — use agent MCP tools (search_people, …)",
+            "linkedin-mcp ready — use agent MCP tools (search_people, …)",
         )
     if http_ok("https://r.jina.ai/https://www.linkedin.com", timeout=15):
         return SmokeResult(
@@ -169,7 +169,7 @@ def run_smoke(config: Config | None = None) -> List[SmokeResult]:
             results.append(SmokeResult(name, "skip", "disabled / not installed"))
             continue
         if status == "ok" or (status == "warn" and name == "linkedin"):
-            # LinkedIn is warn when MCP/Jina ready (session lives in MCP host)
+            # LinkedIn warn = Jina public-only; ok = MCP ready
             if name in ("twitter", "reddit", "linkedin"):
                 results.append(fn(backend))
             else:

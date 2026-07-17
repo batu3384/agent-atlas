@@ -96,24 +96,6 @@ def test_rdt_status_parses_authenticated() -> None:
     assert data.get("username") == "testuser"
 
 
-def test_li_status_parses_authenticated() -> None:
-    from agent_atlas.li_status import _parse_yaml_status
-
-    text = "ok: true\nschema_version: '1'\ndata:\n  authenticated: true\n  username: johndoe\n"
-    data = _parse_yaml_status(text)
-    assert data.get("authenticated") is True
-    assert data.get("username") == "johndoe"
-
-
-def test_li_status_parses_error_payload() -> None:
-    from agent_atlas.li_status import _parse_yaml_status
-
-    text = "ok: false\nerror:\n  code: AUTH\n  message: session expired\n"
-    data = _parse_yaml_status(text)
-    assert data.get("authenticated") is False
-    assert "expired" in data.get("error", "")
-
-
 def test_chrome_cookie_file_from_config(tmp_config: Config) -> None:
     from agent_atlas.chrome_profile import chrome_cookie_file
 
@@ -136,23 +118,20 @@ def test_apply_runtime_env_reddit_profile(tmp_config: Config) -> None:
     assert applied["REDDIT_CHROME_PROFILE"] == "Profile 3"
 
 
-def test_linkedin_uses_mcp_when_configured(monkeypatch) -> None:
+def test_linkedin_ok_when_mcp_ready(monkeypatch) -> None:
     from agent_atlas.channels.social import LinkedInChannel
 
     ch = LinkedInChannel()
     monkeypatch.setattr(
-        "agent_atlas.linkedin_mcp.linkedin_mcp_configured", lambda: True
-    )
-    monkeypatch.setattr(
         "agent_atlas.linkedin_mcp.linkedin_mcp_status",
         lambda: (
-            "warn",
-            "linkedin-mcp ready — use MCP tools",
-            {"configured": True, "uvx": True},
+            "ok",
+            "linkedin-mcp via mcporter — Profile, jobs, people search",
+            {"source": "mcporter"},
         ),
     )
     status, msg = ch.check()
-    assert status == "warn"
+    assert status == "ok"
     assert ch.active_backend == "linkedin-mcp"
     assert "linkedin-mcp" in msg
 
@@ -161,9 +140,6 @@ def test_linkedin_falls_back_to_jina(monkeypatch) -> None:
     from agent_atlas.channels.social import LinkedInChannel
 
     ch = LinkedInChannel()
-    monkeypatch.setattr(
-        "agent_atlas.linkedin_mcp.linkedin_mcp_configured", lambda: False
-    )
     monkeypatch.setattr(
         "agent_atlas.linkedin_mcp.linkedin_mcp_status",
         lambda: ("off", "LinkedIn MCP not configured", {"configured": False}),
@@ -177,8 +153,9 @@ def test_linkedin_falls_back_to_jina(monkeypatch) -> None:
     assert "jina" in msg.lower()
 
 
-def test_linkedin_mcp_config_detection(tmp_path, monkeypatch) -> None:
+def test_linkedin_mcp_explicit_scraper_in_cursor_config(tmp_path, monkeypatch) -> None:
     from agent_atlas import linkedin_mcp as lm
+    from agent_atlas.probe import ProbeResult
 
     cfg = tmp_path / "mcp.json"
     cfg.write_text(
@@ -195,21 +172,70 @@ def test_linkedin_mcp_config_detection(tmp_path, monkeypatch) -> None:
         encoding="utf-8",
     )
     monkeypatch.setattr(lm, "_mcp_config_paths", lambda: [cfg])
+    monkeypatch.setattr(
+        lm,
+        "probe_command",
+        lambda *a, **k: ProbeResult("missing", hint="no mcporter"),
+    )
     assert lm.linkedin_mcp_configured() is True
+    st, msg, meta = lm.linkedin_mcp_status()
+    assert st == "ok"
+    assert meta and meta.get("source") == "cursor-mcp"
+    assert "linkedin-mcp" in msg
 
-    empty = tmp_path / "empty.json"
-    empty.write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(lm, "_mcp_config_paths", lambda: [empty])
+
+def test_linkedin_mcp_rejects_name_only_false_positive(tmp_path, monkeypatch) -> None:
+    """Server named linkedin without scraper package must NOT count."""
+    from agent_atlas import linkedin_mcp as lm
+    from agent_atlas.probe import ProbeResult
+
+    cfg = tmp_path / "mcp.json"
+    cfg.write_text(
+        json.dumps(
+            {
+                "mcpServers": {
+                    "linkedin": {
+                        "command": "npx",
+                        "args": ["some-unrelated-tool"],
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(lm, "_mcp_config_paths", lambda: [cfg])
+    monkeypatch.setattr(
+        lm,
+        "probe_command",
+        lambda *a, **k: ProbeResult("ok", output="exa\n"),
+    )
     assert lm.linkedin_mcp_configured() is False
+
+
+def test_linkedin_mcp_ok_via_mcporter_list(monkeypatch) -> None:
+    from agent_atlas import linkedin_mcp as lm
+    from agent_atlas.probe import ProbeResult
+
+    monkeypatch.setattr(lm, "_mcp_config_paths", lambda: [])
+    monkeypatch.setattr(
+        lm,
+        "probe_command",
+        lambda *a, **k: ProbeResult(
+            "ok",
+            output="exa\nlinkedin\n  Transport: http (http://localhost:8001/mcp)\n",
+        ),
+    )
+    assert lm.linkedin_mcp_configured() is True
+    st, msg, meta = lm.linkedin_mcp_status()
+    assert st == "ok"
+    assert meta and meta.get("source") == "mcporter"
+    assert "mcporter" in msg.lower() or "linkedin-mcp" in msg
 
 
 def test_linkedin_off_without_mcp_or_jina(monkeypatch) -> None:
     from agent_atlas.channels.social import LinkedInChannel
 
     ch = LinkedInChannel()
-    monkeypatch.setattr(
-        "agent_atlas.linkedin_mcp.linkedin_mcp_configured", lambda: False
-    )
     monkeypatch.setattr(
         "agent_atlas.linkedin_mcp.linkedin_mcp_status",
         lambda: ("off", "LinkedIn MCP not configured — login hint", None),
@@ -221,6 +247,17 @@ def test_linkedin_off_without_mcp_or_jina(monkeypatch) -> None:
     assert status == "off"
     assert ch.active_backend is None
     assert "LinkedIn" in msg
+
+
+def test_skill_references_shipped() -> None:
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1] / "agent_atlas" / "skill"
+    assert (root / "SKILL.md").is_file()
+    refs = root / "references"
+    expected = {"web.md", "search.md", "social.md", "career.md", "video.md", "dev.md"}
+    assert refs.is_dir()
+    assert expected <= {p.name for p in refs.glob("*.md")}
 
 
 def test_compare_versions() -> None:

@@ -4,10 +4,11 @@
 
 ## Quick Start
 
-- Install (one line for agents): https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/install.md
+- Install: `uv tool install agent-atlas` (fallback: git+https://github.com/batu3384/agent-atlas.git)
+- Agent one-liner: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/install.md
 - Update: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/update.md
-- [README](https://github.com/batu3384/agent-atlas/blob/main/README.md)
-- [Tier 1](https://github.com/batu3384/agent-atlas/blob/main/docs/tier1.md)
+- Troubleshoot: https://raw.githubusercontent.com/batu3384/agent-atlas/main/docs/troubleshooting.md
+- [Türkçe](https://github.com/batu3384/agent-atlas/blob/main/docs/README_tr.md)
 
 ## Core Commands
 
@@ -22,13 +23,12 @@
 - Web (Jina), Exa search, YouTube (yt-dlp), GitHub (gh), RSS (feedparser)
 - Twitter: twitter-cli → OpenCLI
 - Reddit: rdt-cli (Chrome closed) → OpenCLI
-- LinkedIn: linkedin-mcp → Jina (Reach-style; `uvx linkedin-scraper-mcp@latest --login`)
+- LinkedIn: linkedin-mcp → Jina (Reach-style; mcporter/Cursor probe → doctor **ok**)
 - Facebook / Instagram: OpenCLI (often `disabled_channels`)
-- Config → runtime env; cookie sync from Atlas Chrome profile
+- Config → runtime env; Reddit cookie sync from Atlas Chrome profile
 - Western-only by design (no Bilibili / Xiaohongshu / etc.)
 
 ## Optional
 
 - [SKILL.md](https://github.com/batu3384/agent-atlas/blob/main/SKILL.md)
 - [Platforms](https://github.com/batu3384/agent-atlas/blob/main/docs/platforms.md)
-- [li-cli](https://github.com/batu3384/agent-atlas/blob/main/li-cli/README.md) (experimental)

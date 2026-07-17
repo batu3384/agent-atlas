@@ -146,13 +146,16 @@ class LinkedInChannel(Channel):
         return "linkedin.com" in urlparse(url).netloc.lower()
 
     def check(self, config=None):
-        from agent_atlas.linkedin_mcp import linkedin_mcp_configured, linkedin_mcp_status
+        from agent_atlas.linkedin_mcp import linkedin_mcp_status
 
         # Reach-style: linkedin-scraper-mcp for auth research; Jina for public pages
         mcp_st, mcp_msg, _ = linkedin_mcp_status()
-        if linkedin_mcp_configured():
+        if mcp_st == "ok":
             self.active_backend = "linkedin-mcp"
-            return mcp_st if mcp_st != "off" else "warn", mcp_msg
+            return "ok", mcp_msg
+        if mcp_st == "error":
+            self.active_backend = None
+            return "error", mcp_msg
 
         if http_ok("https://r.jina.ai/", timeout=8):
             self.active_backend = "Jina Reader"

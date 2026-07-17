@@ -168,7 +168,7 @@ Public page (no login):
 curl -s "https://r.jina.ai/https://www.linkedin.com/in/…"
 ```
 
-`agent-atlas doctor` shows `linkedin-mcp` as **warn** when MCP config is present (session lives in the MCP host). Without MCP, doctor falls back to **Jina Reader** for public pages.
+`agent-atlas doctor` shows `linkedin-mcp` as **ok** when `mcporter config list` includes LinkedIn or Cursor/Claude MCP config references `linkedin-scraper-mcp`. Without MCP, doctor falls back to **Jina Reader** (`warn`) for public pages.
 
 ---
 

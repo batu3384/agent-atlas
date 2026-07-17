@@ -2,6 +2,31 @@
 
 All notable changes to Agent Atlas are documented here.
 
+## [0.1.4] — 2026-07-17
+
+### Added
+- PyPI packaging metadata + Trusted Publishing workflow (`.github/workflows/publish.yml`)
+- Modular skill `references/` (web, search, social, career, video, dev)
+- `docs/troubleshooting.md`
+- Turkish summary: `docs/README_tr.md`
+
+### Changed
+- Install/update docs prefer `uv tool install agent-atlas` with git fallback
+- Skill install already copies `references/` into agent skill dirs
+
+## [0.1.3] — 2026-07-17
+
+### Fixed
+- LinkedIn doctor returns **ok** when mcporter lists LinkedIn or Cursor MCP has `linkedin-scraper-mcp` (Reach parity)
+- Reject false-positive MCP configs (server name alone is not enough)
+
+### Removed
+- `li_status.py` and the orphaned `li-cli/` package (no longer routed)
+- Uninstall no longer targets `~/.config/li-cli/`
+
+### Added
+- GitHub Actions CI (`pytest` matrix 3.10–3.13 + wheel gate)
+
 ## [0.1.2] — 2026-07-17
 
 ### Changed
@@ -10,7 +35,7 @@ All notable changes to Agent Atlas are documented here.
 - Dropped Chrome open/closed / feed / bridge language for LinkedIn
 
 ### Notes
-- `li-cli/` remains in-repo but is **not** wired into Atlas routing
+- `li-cli/` was later removed in 0.1.3
 
 ## [0.1.1] — 2026-07-16
 

@@ -17,19 +17,13 @@ pip install -e ".[dev]"
 pytest -q
 ```
 
-Optional orphaned package (not routed by Atlas):
-
-```bash
-cd li-cli && uv sync && uv run pytest -q
-```
-
 ## Guidelines
 
 1. Prefer small, focused PRs
 2. Keep doctor/smoke honest — never report `ok` without a real probe
-3. Update `docs/platforms.md` + `SKILL.md` when changing backend order
-4. Add/adjust tests under `tests/` for routing and parsers
-5. English for product docs; do not commit secrets or cookie dumps
+3. Update `docs/platforms.md` + skill `references/` when changing backend order
+4. Add/adjust tests under `tests/`
+5. English for product docs (`docs/README_tr.md` for Turkish summary); do not commit secrets
 
 ## Commit style
 

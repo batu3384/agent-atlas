@@ -7,7 +7,7 @@
 | Atlas config | `~/.agent-atlas/config.yaml` | mode 600 |
 | twitter-cli / OpenCLI env | process env from config | not written to disk by Atlas beyond config |
 | rdt-cli credentials | `~/.config/rdt-cli/` | owned by rdt-cli (typically 600) |
-| li-cli credentials + browser profile | `~/.config/li-cli/` | mode 700/600 |
+| LinkedIn MCP session | `~/.linkedin-mcp/` | owned by linkedin-scraper-mcp |
 
 Credentials stay on your machine. Agent Atlas does **not** upload cookies or tokens.
 

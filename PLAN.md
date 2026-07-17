@@ -7,40 +7,28 @@
 | **Ürün adı** | Agent Atlas |
 | **Repo** | https://github.com/batu3384/agent-atlas |
 | **Lisans** | MIT |
-| **Dil** | İngilizce (ürün + docs) |
-| **Durum** | v0.1.2 |
+| **Dil** | İngilizce (ürün) + Türkçe özet |
+| **Durum** | v0.1.4 |
 | **CLI** | Python (`agent-atlas`) |
 | **Kapsam** | Western-only (10 kanal) |
 
 ---
 
-## Tier 0 ✅
-Web (Jina), Exa (mcporter), YouTube (yt-dlp), GitHub (gh), RSS (feedparser)
+## Tier 0–1 ✅
+Western channels; LinkedIn = linkedin-mcp → Jina (mcporter/Cursor → ok)
 
-## Tier 1 ✅
-| Kanal | Araç |
-|---|---|
-| Twitter | twitter-cli → OpenCLI |
-| Reddit | rdt-cli → OpenCLI |
-| LinkedIn | linkedin-mcp → Jina (Reach-style) |
-| Facebook / Instagram | OpenCLI (`disabled_channels` sık) |
+## Tamamlanan (Reach parity backlog)
+- [x] LinkedIn live probe + CI + dead li-cli removed
+- [x] PyPI-ready package + publish workflow (Release → PyPI)
+- [x] Modular SKILL references
+- [x] troubleshooting.md
+- [x] i18n: docs/README_tr.md
 
----
-
-## Tamamlanan
-- [x] Install / doctor / smoke / skill
-- [x] Config → `apply_runtime_env`
-- [x] rdt-cli; li-cli orphaned (not routed)
-- [x] LinkedIn Reach parity (MCP → Jina; no OpenCLI/Chrome-open docs)
-- [x] `watch` + `check-update`
-- [x] CHANGELOG / SECURITY / CONTRIBUTING
-
-## Bilinçli ertelenen
-- [ ] **PyPI publish** — kurulum `uv tool` / `pipx` + git
+## Sonraki (opsiyonel)
+- [ ] İlk PyPI Release (GitHub Release + Trusted Publisher bağla)
+- [ ] JA/KO README (gerekirse)
 - [ ] Çin platformları — out of scope
-- [ ] i18n README
-- [ ] Delete `li-cli/` package (optional cleanup)
 
 ---
 
-*Son güncelleme: 2026-07-17 — v0.1.2*
+*Son güncelleme: 2026-07-17 — v0.1.4*

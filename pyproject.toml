@@ -1,11 +1,11 @@
 [project]
 name = "agent-atlas"
-version = "0.1.2"
+version = "0.1.4"
 description = "Search and research the open web for your AI agent."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
-authors = [{name = "Agent Atlas"}]
+authors = [{name = "Batuhan Yuksel", email = "batu3384@users.noreply.github.com"}]
 keywords = [
     "ai-agent",
     "llm-tools",
@@ -13,6 +13,22 @@ keywords = [
     "claude-code",
     "cursor",
     "cli",
+    "jina",
+    "exa",
+    "opencli",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
     "feedparser>=6.0",
@@ -23,13 +39,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "build>=1.0"]
 
 [project.scripts]
 agent-atlas = "agent_atlas.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/batu3384/agent-atlas"
+Repository = "https://github.com/batu3384/agent-atlas"
+Issues = "https://github.com/batu3384/agent-atlas/issues"
+Changelog = "https://github.com/batu3384/agent-atlas/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/batu3384/agent-atlas/blob/main/docs/install.md"
 
 [build-system]
 requires = ["hatchling"]

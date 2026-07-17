@@ -48,11 +48,19 @@ Install Agent Atlas and Tier 0 upstream tools so the user can search and researc
 
 ### Step 1 — Install the package
 
-```bash
-# Recommended: uv tool (puts agent-atlas on ~/.local/bin)
-uv tool install git+https://github.com/batu3384/agent-atlas.git
+Prefer PyPI when the package is published; otherwise install from GitHub.
 
-# Or pipx
+```bash
+# Recommended (PyPI)
+uv tool install agent-atlas
+# or
+pipx install agent-atlas
+# or
+pip install agent-atlas
+
+# Fallback (git — always works)
+uv tool install git+https://github.com/batu3384/agent-atlas.git
+# or
 pipx install git+https://github.com/batu3384/agent-atlas.git
 
 # Or venv from a clone
@@ -64,6 +72,8 @@ pip install -e .
 ```
 
 Ensure `~/.local/bin` is on `PATH` when using `uv tool` / `pipx`.
+
+**Maintainers — publish a release:** create a GitHub Release; `.github/workflows/publish.yml` uploads to PyPI via Trusted Publishing (configure once on pypi.org).
 
 ### Step 2 — Run installer
 

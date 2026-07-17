@@ -297,7 +297,6 @@ def cmd_uninstall(*, dry_run: bool = False, keep_config: bool = False) -> int:
     ]
     if not keep_config:
         paths.append(Path.home() / ".agent-atlas")
-        paths.append(Path.home() / ".config" / "li-cli")
     for p in paths:
         if not p.exists():
             continue

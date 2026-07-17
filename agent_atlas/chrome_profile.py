@@ -20,7 +20,7 @@ def _chrome_root() -> Path:
 def resolve_chrome_profile(config: Config) -> Tuple[Optional[str], str]:
     """Return (profile_name, browser) from config.
 
-    Priority matches li-cli: linkedin → twitter → reddit (shared Atlas profile).
+    Priority: linkedin → twitter → reddit (shared Atlas profile keys).
     """
     profile = (
         config.get("linkedin_chrome_profile")
